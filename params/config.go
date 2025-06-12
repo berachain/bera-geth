@@ -456,13 +456,24 @@ type CliqueConfig struct {
 
 // BerachainConfig is the berachain config.
 type BerachainConfig struct {
-	// MinimumBaseFee is the minimum base fee in wei
-	MinimumBaseFee           uint64 `json:"eip1559MinimumBaseFee"`
+	// Prague1 Fork Values
+	//
+	// Prague1Time is the time of the Prague1 fork.
+	Prague1Time *uint64 `json:"prague1Time,omitempty"` // Prague1 switch time (nil = no fork, 0 = already on prague1)
+	// MinimumBaseFee is the minimum base fee in wei.
+	MinimumBaseFee uint64 `json:"eip1559MinimumBaseFee"`
+	// BaseFeeChangeDenominator is the base fee change denominator.
 	BaseFeeChangeDenominator uint64 `json:"eip1559BaseFeeChangeDenominator"`
 }
 
 // String implements the stringer interface.
 func (o *BerachainConfig) String() string {
+	if o.Prague1Time != nil {
+		return fmt.Sprintf(
+			"berachain(prague1Time: %v, minimumBaseFee: %v, baseFeeChangeDenominator: %v)",
+			*o.Prague1Time, o.MinimumBaseFee, o.BaseFeeChangeDenominator,
+		)
+	}
 	return "berachain"
 }
 
