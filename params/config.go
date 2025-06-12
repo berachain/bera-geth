@@ -64,8 +64,9 @@ var (
 		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cbb839cbe05303d7705fa"),
 		Ethash:                  new(EthashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun: DefaultCancunBlobConfig,
-			Prague: DefaultPragueBlobConfig,
+			Cancun:  DefaultCancunBlobConfig,
+			Prague:  DefaultPragueBlobConfig,
+			Prague1: DefaultPrague1BlobConfig,
 		},
 	}
 	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
@@ -95,8 +96,9 @@ var (
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
 		Ethash:                  new(EthashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun: DefaultCancunBlobConfig,
-			Prague: DefaultPragueBlobConfig,
+			Cancun:  DefaultCancunBlobConfig,
+			Prague:  DefaultPragueBlobConfig,
+			Prague1: DefaultPrague1BlobConfig,
 		},
 	}
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
@@ -290,6 +292,12 @@ var (
 	}
 	// DefaultPragueBlobConfig is the default blob configuration for the Prague fork.
 	DefaultPragueBlobConfig = &BlobConfig{
+		Target:         3,
+		Max:            6,
+		UpdateFraction: 3338477,
+	}
+	// DefaultPrague1BlobConfig is the default blob configuration for the Prague1 fork.
+	DefaultPrague1BlobConfig = &BlobConfig{
 		Target:         3,
 		Max:            6,
 		UpdateFraction: 3338477,
@@ -490,6 +498,9 @@ func (c *ChainConfig) Description() string {
 	if c.PragueTime != nil {
 		banner += fmt.Sprintf(" - Prague:                      @%-10v\n", *c.PragueTime)
 	}
+	if c.Berachain.Prague1Time != nil {
+		banner += fmt.Sprintf(" - Prague1:                     @%-10v\n", *c.Berachain.Prague1Time)
+	}
 	if c.OsakaTime != nil {
 		banner += fmt.Sprintf(" - Osaka:                      @%-10v\n", *c.OsakaTime)
 	}
@@ -508,10 +519,11 @@ type BlobConfig struct {
 
 // BlobScheduleConfig determines target and max number of blobs allow per fork.
 type BlobScheduleConfig struct {
-	Cancun *BlobConfig `json:"cancun,omitempty"`
-	Prague *BlobConfig `json:"prague,omitempty"`
-	Osaka  *BlobConfig `json:"osaka,omitempty"`
-	Verkle *BlobConfig `json:"verkle,omitempty"`
+	Cancun  *BlobConfig `json:"cancun,omitempty"`
+	Prague  *BlobConfig `json:"prague,omitempty"`
+	Prague1 *BlobConfig `json:"prague1,omitempty"`
+	Osaka   *BlobConfig `json:"osaka,omitempty"`
+	Verkle  *BlobConfig `json:"verkle,omitempty"`
 }
 
 // IsBerachain returns whether the node is a berachain node or not.
@@ -702,6 +714,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "shanghaiTime", timestamp: c.ShanghaiTime},
 		{name: "cancunTime", timestamp: c.CancunTime, optional: true},
 		{name: "pragueTime", timestamp: c.PragueTime, optional: true},
+		{name: "prague1Time", timestamp: c.Berachain.Prague1Time, optional: true},
 		{name: "osakaTime", timestamp: c.OsakaTime, optional: true},
 		{name: "verkleTime", timestamp: c.VerkleTime, optional: true},
 	} {
@@ -752,6 +765,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 	}{
 		{name: "cancun", timestamp: c.CancunTime, config: bsc.Cancun},
 		{name: "prague", timestamp: c.PragueTime, config: bsc.Prague},
+		{name: "prague1", timestamp: c.Berachain.Prague1Time, config: bsc.Prague1},
 		{name: "osaka", timestamp: c.OsakaTime, config: bsc.Osaka},
 	} {
 		if cur.config != nil {
@@ -846,6 +860,9 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	}
 	if isForkTimestampIncompatible(c.PragueTime, newcfg.PragueTime, headTimestamp) {
 		return newTimestampCompatError("Prague fork timestamp", c.PragueTime, newcfg.PragueTime)
+	}
+	if isForkTimestampIncompatible(c.Berachain.Prague1Time, newcfg.Berachain.Prague1Time, headTimestamp) {
+		return newTimestampCompatError("Prague1 fork timestamp", c.Berachain.Prague1Time, newcfg.Berachain.Prague1Time)
 	}
 	if isForkTimestampIncompatible(c.OsakaTime, newcfg.OsakaTime, headTimestamp) {
 		return newTimestampCompatError("Osaka fork timestamp", c.OsakaTime, newcfg.OsakaTime)
@@ -1046,13 +1063,13 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                                 *big.Int
-	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
-	IsEIP2929, IsEIP4762                                    bool
-	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
-	IsBerlin, IsLondon                                      bool
-	IsMerge, IsShanghai, IsCancun, IsPrague, IsOsaka        bool
-	IsVerkle                                                bool
+	ChainID                                                     *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158                   bool
+	IsEIP2929, IsEIP4762                                        bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul     bool
+	IsBerlin, IsLondon                                          bool
+	IsMerge, IsShanghai, IsCancun, IsPrague, IsPrague1, IsOsaka bool
+	IsVerkle                                                    bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1081,6 +1098,7 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsShanghai:       isMerge && c.IsShanghai(num, timestamp),
 		IsCancun:         isMerge && c.IsCancun(num, timestamp),
 		IsPrague:         isMerge && c.IsPrague(num, timestamp),
+		IsPrague1:        isMerge && c.IsPrague1(timestamp),
 		IsOsaka:          isMerge && c.IsOsaka(num, timestamp),
 		IsVerkle:         isVerkle,
 		IsEIP4762:        isVerkle,
