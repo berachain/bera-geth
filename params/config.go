@@ -68,7 +68,7 @@ var (
 			Prague: DefaultPragueBlobConfig,
 		},
 	}
-	// SepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
+	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
 	// TODO: fix.
 	BepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
@@ -857,13 +857,12 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 }
 
 // BaseFeeChangeDenominator bounds the amount the base fee can change between blocks.
-// TODO: needs to be fork aware
-func (c *ChainConfig) BaseFeeChangeDenominator() uint64 {
-	if c.Berachain != nil {
-		fmt.Println("Using Berachain BaseFeeChangeDenominator")
+func (c *ChainConfig) BaseFeeChangeDenominator(time uint64) uint64 {
+	// Starting at the Prague1 fork, we use the Berachain base fee change denominator.
+	if c.IsPrague1(time) {
 		return c.Berachain.BaseFeeChangeDenominator
 	}
-	fmt.Println("Using Default BaseFeeChangeDenominator")
+
 	return DefaultBaseFeeChangeDenominator
 }
 
@@ -880,6 +879,8 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	switch {
 	case c.IsOsaka(london, time):
 		return forks.Osaka
+	case c.IsPrague1(time):
+		return forks.Prague1
 	case c.IsPrague(london, time):
 		return forks.Prague
 	case c.IsCancun(london, time):
@@ -897,6 +898,8 @@ func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 	switch {
 	case fork == forks.Osaka:
 		return c.OsakaTime
+	case fork == forks.Prague1:
+		return c.Berachain.Prague1Time
 	case fork == forks.Prague:
 		return c.PragueTime
 	case fork == forks.Cancun:
