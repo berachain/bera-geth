@@ -93,7 +93,7 @@ var (
 		Name:     "datadir",
 		Usage:    "Data directory for the databases and keystore",
 		Value:    flags.DirectoryString(node.DefaultDataDir()),
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	RemoteDBFlag = &cli.StringFlag{
 		Name:     "remotedb",
@@ -104,22 +104,22 @@ var (
 		Name:     "db.engine",
 		Usage:    "Backing database implementation to use ('pebble' or 'leveldb')",
 		Value:    node.DefaultConfig.DBEngine,
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	AncientFlag = &flags.DirectoryFlag{
 		Name:     "datadir.ancient",
 		Usage:    "Root directory for ancient data (default = inside chaindata)",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	EraFlag = &flags.DirectoryFlag{
 		Name:     "datadir.era",
 		Usage:    "Root directory for era1 history (default = inside ancient/chain)",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	MinFreeDiskSpaceFlag = &flags.DirectoryFlag{
 		Name:     "datadir.minfreedisk",
 		Usage:    "Minimum free disk space in MB, once reached triggers auto shut down (default = --cache.gc converted to MB, 0 = disabled)",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	KeyStoreDirFlag = &flags.DirectoryFlag{
 		Name:     "keystore",
@@ -141,27 +141,17 @@ var (
 		Name:     "networkid",
 		Usage:    "Explicitly set network id (integer)(For testnets: use --sepolia, --holesky, --hoodi instead)",
 		Value:    ethconfig.Defaults.NetworkId,
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	MainnetFlag = &cli.BoolFlag{
 		Name:     "mainnet",
-		Usage:    "Ethereum mainnet",
-		Category: flags.EthCategory,
+		Usage:    "Berachain mainnet",
+		Category: flags.BerachainCategory,
 	}
-	SepoliaFlag = &cli.BoolFlag{
-		Name:     "sepolia",
-		Usage:    "Sepolia network: pre-configured proof-of-stake test network",
-		Category: flags.EthCategory,
-	}
-	HoleskyFlag = &cli.BoolFlag{
-		Name:     "holesky",
-		Usage:    "Holesky network: pre-configured proof-of-stake test network",
-		Category: flags.EthCategory,
-	}
-	HoodiFlag = &cli.BoolFlag{
-		Name:     "hoodi",
-		Usage:    "Hoodi network: pre-configured proof-of-stake test network",
-		Category: flags.EthCategory,
+	BepoliaFlag = &cli.BoolFlag{
+		Name:     "bepolia",
+		Usage:    "Bepolia network: pre-configured proof-of-stake test network",
+		Category: flags.BerachainCategory,
 	}
 	// Dev mode
 	DeveloperFlag = &cli.BoolFlag{
@@ -189,7 +179,7 @@ var (
 	ExitWhenSyncedFlag = &cli.BoolFlag{
 		Name:     "exitwhensynced",
 		Usage:    "Exits after block synchronisation completes",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 
 	// Dump command options.
@@ -225,7 +215,7 @@ var (
 		Name:     "snapshot",
 		Usage:    `Enables snapshot-database mode (default = enable)`,
 		Value:    true,
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	LightKDFFlag = &cli.BoolFlag{
 		Name:     "lightkdf",
@@ -235,23 +225,23 @@ var (
 	EthRequiredBlocksFlag = &cli.StringFlag{
 		Name:     "eth.requiredblocks",
 		Usage:    "Comma separated block number-to-hash mappings to require for peering (<number>=<hash>)",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	BloomFilterSizeFlag = &cli.Uint64Flag{
 		Name:     "bloomfilter.size",
 		Usage:    "Megabytes of memory allocated to bloom-filter for pruning",
 		Value:    2048,
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	OverridePrague = &cli.Uint64Flag{
 		Name:     "override.prague",
 		Usage:    "Manually specify the Prague fork timestamp, overriding the bundled setting",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	OverrideVerkle = &cli.Uint64Flag{
 		Name:     "override.verkle",
 		Usage:    "Manually specify the Verkle fork timestamp, overriding the bundled setting",
-		Category: flags.EthCategory,
+		Category: flags.BerachainCategory,
 	}
 	SyncModeFlag = &cli.StringFlag{
 		Name:     "syncmode",
@@ -971,9 +961,7 @@ Please note that --` + MetricsHTTPFlag.Name + ` must be set to start the server.
 var (
 	// TestnetFlags is the flag group of all built-in supported testnets.
 	TestnetFlags = []cli.Flag{
-		SepoliaFlag,
-		HoleskyFlag,
-		HoodiFlag,
+		BepoliaFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
 	NetworkFlags = append([]cli.Flag{MainnetFlag}, TestnetFlags...)
@@ -1001,14 +989,8 @@ var (
 // then a subdirectory of the specified datadir will be used.
 func MakeDataDir(ctx *cli.Context) string {
 	if path := ctx.String(DataDirFlag.Name); path != "" {
-		if ctx.Bool(SepoliaFlag.Name) {
-			return filepath.Join(path, "sepolia")
-		}
-		if ctx.Bool(HoleskyFlag.Name) {
-			return filepath.Join(path, "holesky")
-		}
-		if ctx.Bool(HoodiFlag.Name) {
-			return filepath.Join(path, "hoodi")
+		if ctx.Bool(BepoliaFlag.Name) {
+			return filepath.Join(path, "bepolia")
 		}
 		return path
 	}
@@ -1066,12 +1048,8 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			return // Already set by config file, don't apply defaults.
 		}
 		switch {
-		case ctx.Bool(HoleskyFlag.Name):
-			urls = params.HoleskyBootnodes
-		case ctx.Bool(SepoliaFlag.Name):
-			urls = params.SepoliaBootnodes
-		case ctx.Bool(HoodiFlag.Name):
-			urls = params.HoodiBootnodes
+		case ctx.Bool(BepoliaFlag.Name):
+			urls = params.BepoliaBootnodes
 		}
 	}
 	cfg.BootstrapNodes = mustParseBootnodes(urls)
@@ -1430,12 +1408,8 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = ctx.String(DataDirFlag.Name)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.DataDir = "" // unless explicitly requested, use memory databases
-	case ctx.Bool(SepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "sepolia")
-	case ctx.Bool(HoleskyFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
-	case ctx.Bool(HoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
-		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
+	case ctx.Bool(BepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "bepolia")
 	}
 }
 
@@ -1562,7 +1536,7 @@ func setRequiredBlocks(ctx *cli.Context, cfg *ethconfig.Config) {
 // SetEthConfig applies eth-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 	// Avoid conflicting network flags, don't allow network id override on preset networks
-	flags.CheckExclusive(ctx, MainnetFlag, DeveloperFlag, SepoliaFlag, HoleskyFlag, HoodiFlag, NetworkIdFlag)
+	flags.CheckExclusive(ctx, MainnetFlag, DeveloperFlag, BepoliaFlag, NetworkIdFlag)
 	flags.CheckExclusive(ctx, DeveloperFlag, ExternalSignerFlag) // Can't use both ephemeral unlocked and external signer
 
 	// Set configurations from CLI flags
@@ -1737,18 +1711,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 		cfg.NetworkId = 1
 		cfg.Genesis = core.DefaultGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.MainnetGenesisHash)
-	case ctx.Bool(HoleskyFlag.Name):
-		cfg.NetworkId = 17000
-		cfg.Genesis = core.DefaultHoleskyGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoleskyGenesisHash)
-	case ctx.Bool(SepoliaFlag.Name):
+	case ctx.Bool(BepoliaFlag.Name):
 		cfg.NetworkId = 11155111
-		cfg.Genesis = core.DefaultSepoliaGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.SepoliaGenesisHash)
-	case ctx.Bool(HoodiFlag.Name):
-		cfg.NetworkId = 560048
-		cfg.Genesis = core.DefaultHoodiGenesisBlock()
-		SetDNSDiscoveryDefaults(cfg, params.HoodiGenesisHash)
+		cfg.Genesis = core.DefaultBepoliaGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.BepoliaGenesisHash)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.NetworkId = 1337
 		cfg.SyncMode = ethconfig.FullSync
@@ -1864,16 +1830,12 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 func MakeBeaconLightConfig(ctx *cli.Context) bparams.ClientConfig {
 	var config bparams.ClientConfig
 	customConfig := ctx.IsSet(BeaconConfigFlag.Name)
-	flags.CheckExclusive(ctx, MainnetFlag, SepoliaFlag, HoleskyFlag, BeaconConfigFlag)
+	flags.CheckExclusive(ctx, MainnetFlag, BepoliaFlag, BeaconConfigFlag)
 	switch {
 	case ctx.Bool(MainnetFlag.Name):
 		config.ChainConfig = *bparams.MainnetLightConfig
-	case ctx.Bool(SepoliaFlag.Name):
-		config.ChainConfig = *bparams.SepoliaLightConfig
-	case ctx.Bool(HoleskyFlag.Name):
-		config.ChainConfig = *bparams.HoleskyLightConfig
-	case ctx.Bool(HoodiFlag.Name):
-		config.ChainConfig = *bparams.HoodiLightConfig
+	case ctx.Bool(BepoliaFlag.Name):
+		config.ChainConfig = *bparams.BepoliaLightConfig
 	default:
 		if !customConfig {
 			config.ChainConfig = *bparams.MainnetLightConfig
@@ -2158,12 +2120,8 @@ func MakeGenesis(ctx *cli.Context) *core.Genesis {
 	switch {
 	case ctx.Bool(MainnetFlag.Name):
 		genesis = core.DefaultGenesisBlock()
-	case ctx.Bool(HoleskyFlag.Name):
-		genesis = core.DefaultHoleskyGenesisBlock()
-	case ctx.Bool(SepoliaFlag.Name):
-		genesis = core.DefaultSepoliaGenesisBlock()
-	case ctx.Bool(HoodiFlag.Name):
-		genesis = core.DefaultHoodiGenesisBlock()
+	case ctx.Bool(BepoliaFlag.Name):
+		genesis = core.DefaultBepoliaGenesisBlock()
 	case ctx.Bool(DeveloperFlag.Name):
 		Fatalf("Developer chains are ephemeral")
 	}

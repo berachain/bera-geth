@@ -27,11 +27,10 @@ import (
 )
 
 // Genesis hashes to enforce below configs on.
+// TODO: fix.
 var (
 	MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	HoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
-	SepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
-	HoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
+	BepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
 )
 
 func newUint64(val uint64) *uint64 { return &val }
@@ -40,6 +39,7 @@ var (
 	MainnetTerminalTotalDifficulty, _ = new(big.Int).SetString("58_750_000_000_000_000_000_000", 0)
 
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
+	// TODO: fix.
 	MainnetChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
 		HomesteadBlock:          big.NewInt(1_150_000),
@@ -68,38 +68,9 @@ var (
 			Prague: DefaultPragueBlobConfig,
 		},
 	}
-	// HoleskyChainConfig contains the chain parameters to run a node on the Holesky test network.
-	HoleskyChainConfig = &ChainConfig{
-		ChainID:                 big.NewInt(17000),
-		HomesteadBlock:          big.NewInt(0),
-		DAOForkBlock:            nil,
-		DAOForkSupport:          true,
-		EIP150Block:             big.NewInt(0),
-		EIP155Block:             big.NewInt(0),
-		EIP158Block:             big.NewInt(0),
-		ByzantiumBlock:          big.NewInt(0),
-		ConstantinopleBlock:     big.NewInt(0),
-		PetersburgBlock:         big.NewInt(0),
-		IstanbulBlock:           big.NewInt(0),
-		MuirGlacierBlock:        nil,
-		BerlinBlock:             big.NewInt(0),
-		LondonBlock:             big.NewInt(0),
-		ArrowGlacierBlock:       nil,
-		GrayGlacierBlock:        nil,
-		TerminalTotalDifficulty: big.NewInt(0),
-		MergeNetsplitBlock:      nil,
-		ShanghaiTime:            newUint64(1696000704),
-		CancunTime:              newUint64(1707305664),
-		PragueTime:              newUint64(1740434112),
-		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
-		Ethash:                  new(EthashConfig),
-		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun: DefaultCancunBlobConfig,
-			Prague: DefaultPragueBlobConfig,
-		},
-	}
-	// SepoliaChainConfig contains the chain parameters to run a node on the Sepolia test network.
-	SepoliaChainConfig = &ChainConfig{
+	// SepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
+	// TODO: fix.
+	BepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
 		HomesteadBlock:          big.NewInt(0),
 		DAOForkBlock:            nil,
@@ -122,36 +93,6 @@ var (
 		CancunTime:              newUint64(1706655072),
 		PragueTime:              newUint64(1741159776),
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
-		Ethash:                  new(EthashConfig),
-		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun: DefaultCancunBlobConfig,
-			Prague: DefaultPragueBlobConfig,
-		},
-	}
-	// HoodiChainConfig contains the chain parameters to run a node on the Hoodi test network.
-	HoodiChainConfig = &ChainConfig{
-		ChainID:                 big.NewInt(560048),
-		HomesteadBlock:          big.NewInt(0),
-		DAOForkBlock:            nil,
-		DAOForkSupport:          true,
-		EIP150Block:             big.NewInt(0),
-		EIP155Block:             big.NewInt(0),
-		EIP158Block:             big.NewInt(0),
-		ByzantiumBlock:          big.NewInt(0),
-		ConstantinopleBlock:     big.NewInt(0),
-		PetersburgBlock:         big.NewInt(0),
-		IstanbulBlock:           big.NewInt(0),
-		MuirGlacierBlock:        big.NewInt(0),
-		BerlinBlock:             big.NewInt(0),
-		LondonBlock:             big.NewInt(0),
-		ArrowGlacierBlock:       nil,
-		GrayGlacierBlock:        nil,
-		TerminalTotalDifficulty: big.NewInt(0),
-		MergeNetsplitBlock:      big.NewInt(0),
-		ShanghaiTime:            newUint64(0),
-		CancunTime:              newUint64(0),
-		PragueTime:              newUint64(1742999832),
-		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
 		Ethash:                  new(EthashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
 			Cancun: DefaultCancunBlobConfig,
@@ -349,9 +290,9 @@ var (
 	}
 	// DefaultPragueBlobConfig is the default blob configuration for the Prague fork.
 	DefaultPragueBlobConfig = &BlobConfig{
-		Target:         6,
-		Max:            9,
-		UpdateFraction: 5007716,
+		Target:         3,
+		Max:            6,
+		UpdateFraction: 3338477,
 	}
 	// DefaultOsakaBlobConfig is the default blob configuration for the Osaka fork.
 	DefaultOsakaBlobConfig = &BlobConfig{
@@ -370,9 +311,7 @@ var (
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
 	MainnetChainConfig.ChainID.String(): "mainnet",
-	SepoliaChainConfig.ChainID.String(): "sepolia",
-	HoleskyChainConfig.ChainID.String(): "holesky",
-	HoodiChainConfig.ChainID.String():   "hoodi",
+	BepoliaChainConfig.ChainID.String(): "bepolia",
 }
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -460,8 +399,8 @@ type BerachainConfig struct {
 	//
 	// Prague1Time is the time of the Prague1 fork.
 	Prague1Time *uint64 `json:"prague1Time,omitempty"` // Prague1 switch time (nil = no fork, 0 = already on prague1)
-	// MinimumBaseFee is the minimum base fee in wei.
-	MinimumBaseFee uint64 `json:"eip1559MinimumBaseFee"`
+	// MinimumBaseFeeWei is the minimum base fee in wei.
+	MinimumBaseFeeWei uint64 `json:"eip1559MinimumBaseFeeWei"`
 	// BaseFeeChangeDenominator is the base fee change denominator.
 	BaseFeeChangeDenominator uint64 `json:"eip1559BaseFeeChangeDenominator"`
 }
@@ -470,8 +409,8 @@ type BerachainConfig struct {
 func (o *BerachainConfig) String() string {
 	if o.Prague1Time != nil {
 		return fmt.Sprintf(
-			"berachain(prague1Time: %v, minimumBaseFee: %v, baseFeeChangeDenominator: %v)",
-			*o.Prague1Time, o.MinimumBaseFee, o.BaseFeeChangeDenominator,
+			"berachain(prague1Time: %v, minimumBaseFee: %v wei, baseFeeChangeDenominator: %v)",
+			*o.Prague1Time, o.MinimumBaseFeeWei, o.BaseFeeChangeDenominator,
 		)
 	}
 	return "berachain"
@@ -673,6 +612,11 @@ func (c *ChainConfig) IsCancun(num *big.Int, time uint64) bool {
 // IsPrague returns whether time is either equal to the Prague fork time or greater.
 func (c *ChainConfig) IsPrague(num *big.Int, time uint64) bool {
 	return c.IsLondon(num) && isTimestampForked(c.PragueTime, time)
+}
+
+// IsPrague1 returns whether time is either equal to the Prague1 fork time or greater.
+func (c *ChainConfig) IsPrague1(time uint64) bool {
+	return c.IsBerachain() && isTimestampForked(c.Berachain.Prague1Time, time)
 }
 
 // IsOsaka returns whether time is either equal to the Osaka fork time or greater.

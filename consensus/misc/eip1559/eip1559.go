@@ -53,19 +53,21 @@ func VerifyEIP1559Header(config *params.ChainConfig, parent, header *types.Heade
 }
 
 // CalcBaseFee calculates the basefee of the header.
-// TODO: Make this fork aware
 func CalcBaseFee(config *params.ChainConfig, parent *types.Header) *big.Int {
 	calculatedBaseFee := calcBaseFee(config, parent)
-	if config.IsBerachain() {
-		minBaseFee := new(big.Int).SetUint64(config.Berachain.MinimumBaseFee)
+
+	// Starting at the Prague1 fork, the base fee must be at least the minimum base fee.
+	if config.IsPrague1(parent.Time) {
+		minBaseFee := new(big.Int).SetUint64(config.Berachain.MinimumBaseFeeWei)
 		if calculatedBaseFee.Cmp(minBaseFee) < 0 {
-			return minBaseFee
+			calculatedBaseFee = minBaseFee
 		}
 	}
+
 	return calculatedBaseFee
 }
 
-// calcBaseFee calculates the basefee of the header.
+// calcBaseFee calculates the basefee of the header in wei.
 func calcBaseFee(config *params.ChainConfig, parent *types.Header) *big.Int {
 	// If the current block is the first EIP-1559 block, return the InitialBaseFee.
 	if !config.IsLondon(parent.Number) {
