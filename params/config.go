@@ -69,7 +69,9 @@ var (
 			Prague1: DefaultPrague1BlobConfig,
 		},
 		Berachain: &BerachainConfig{
-			Prague1Time: nil,
+			Prague1Time:              nil,        // TODO: set the fork time.
+			MinimumBaseFeeWei:        1000000000, // 1 gwei
+			BaseFeeChangeDenominator: 48,         // 6x increase from the default
 		},
 	}
 	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
@@ -104,7 +106,9 @@ var (
 			Prague1: DefaultPrague1BlobConfig,
 		},
 		Berachain: &BerachainConfig{
-			Prague1Time: nil,
+			Prague1Time:              nil,        // TODO: set the fork time.
+			MinimumBaseFeeWei:        1000000000, // 1 gwei
+			BaseFeeChangeDenominator: 48,         // 6x increase from the default
 		},
 	}
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
