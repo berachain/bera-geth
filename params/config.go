@@ -68,6 +68,9 @@ var (
 			Prague:  DefaultPragueBlobConfig,
 			Prague1: DefaultPrague1BlobConfig,
 		},
+		Berachain: &BerachainConfig{
+			Prague1Time: nil,
+		},
 	}
 	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
 	// TODO: fix.
@@ -99,6 +102,9 @@ var (
 			Cancun:  DefaultCancunBlobConfig,
 			Prague:  DefaultPragueBlobConfig,
 			Prague1: DefaultPrague1BlobConfig,
+		},
+		Berachain: &BerachainConfig{
+			Prague1Time: nil,
 		},
 	}
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
@@ -310,9 +316,10 @@ var (
 	}
 	// DefaultBlobSchedule is the latest configured blob schedule for Ethereum mainnet.
 	DefaultBlobSchedule = &BlobScheduleConfig{
-		Cancun: DefaultCancunBlobConfig,
-		Prague: DefaultPragueBlobConfig,
-		Osaka:  DefaultOsakaBlobConfig,
+		Cancun:  DefaultCancunBlobConfig,
+		Prague:  DefaultPragueBlobConfig,
+		Prague1: DefaultPrague1BlobConfig,
+		Osaka:   DefaultOsakaBlobConfig,
 	}
 )
 
