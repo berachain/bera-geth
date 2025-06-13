@@ -310,9 +310,10 @@ var (
 	}
 	// DefaultBlobSchedule is the latest configured blob schedule for Ethereum mainnet.
 	DefaultBlobSchedule = &BlobScheduleConfig{
-		Cancun: DefaultCancunBlobConfig,
-		Prague: DefaultPragueBlobConfig,
-		Osaka:  DefaultOsakaBlobConfig,
+		Cancun:  DefaultCancunBlobConfig,
+		Prague:  DefaultPragueBlobConfig,
+		Prague1: DefaultPrague1BlobConfig,
+		Osaka:   DefaultOsakaBlobConfig,
 	}
 )
 
