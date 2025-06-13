@@ -45,7 +45,7 @@ var (
 			testTAPFlag,
 			testSlowFlag,
 			testArchiveFlag,
-			testBepoliaFlag,
+			testSepoliaFlag,
 			testMainnetFlag,
 			filterQueryFileFlag,
 			historyTestFileFlag,
@@ -75,9 +75,9 @@ var (
 		Value:    false,
 		Category: flags.TestingCategory,
 	}
-	testBepoliaFlag = &cli.BoolFlag{
-		Name:     "bepolia",
-		Usage:    "Use test cases for bepolia network",
+	testSepoliaFlag = &cli.BoolFlag{
+		Name:     "sepolia",
+		Usage:    "Use test cases for sepolia network",
 		Category: flags.TestingCategory,
 	}
 	testMainnetFlag = &cli.BoolFlag{
@@ -118,9 +118,9 @@ func validateHistoryPruneErr(err error, blockNum uint64, historyPruneBlock *uint
 }
 
 func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
-	flags.CheckExclusive(ctx, testMainnetFlag, testBepoliaFlag)
-	if (ctx.IsSet(testMainnetFlag.Name) || ctx.IsSet(testBepoliaFlag.Name)) && ctx.IsSet(filterQueryFileFlag.Name) {
-		exit(filterQueryFileFlag.Name + " cannot be used with " + testMainnetFlag.Name + " or " + testBepoliaFlag.Name)
+	flags.CheckExclusive(ctx, testMainnetFlag, testSepoliaFlag)
+	if (ctx.IsSet(testMainnetFlag.Name) || ctx.IsSet(testSepoliaFlag.Name)) && ctx.IsSet(filterQueryFileFlag.Name) {
+		exit(filterQueryFileFlag.Name + " cannot be used with " + testMainnetFlag.Name + " or " + testSepoliaFlag.Name)
 	}
 
 	// configure ethclient
@@ -135,13 +135,13 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		cfg.historyPruneBlock = new(uint64)
 		*cfg.historyPruneBlock = history.PrunePoints[params.MainnetGenesisHash].BlockNumber
 		cfg.traceTestFile = "queries/trace_mainnet.json"
-	case ctx.Bool(testBepoliaFlag.Name):
+	case ctx.Bool(testSepoliaFlag.Name):
 		cfg.fsys = builtinTestFiles
-		cfg.filterQueryFile = "queries/filter_queries_bepolia.json"
-		cfg.historyTestFile = "queries/history_bepolia.json"
+		cfg.filterQueryFile = "queries/filter_queries_sepolia.json"
+		cfg.historyTestFile = "queries/history_sepolia.json"
 		cfg.historyPruneBlock = new(uint64)
-		*cfg.historyPruneBlock = history.PrunePoints[params.BepoliaGenesisHash].BlockNumber
-		cfg.traceTestFile = "queries/trace_bepolia.json"
+		*cfg.historyPruneBlock = history.PrunePoints[params.SepoliaGenesisHash].BlockNumber
+		cfg.traceTestFile = "queries/trace_sepolia.json"
 	default:
 		cfg.fsys = os.DirFS(".")
 		cfg.filterQueryFile = ctx.String(filterQueryFileFlag.Name)

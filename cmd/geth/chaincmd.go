@@ -473,8 +473,12 @@ func importHistory(ctx *cli.Context) error {
 		switch {
 		case ctx.Bool(utils.MainnetFlag.Name):
 			network = "mainnet"
-		case ctx.Bool(utils.BepoliaFlag.Name):
-			network = "bepolia"
+		case ctx.Bool(utils.SepoliaFlag.Name):
+			network = "sepolia"
+		case ctx.Bool(utils.HoleskyFlag.Name):
+			network = "holesky"
+		case ctx.Bool(utils.HoodiFlag.Name):
+			network = "hoodi"
 		}
 	} else {
 		// No network flag set, try to determine network based on files
@@ -709,8 +713,8 @@ func downloadEra(ctx *cli.Context) error {
 	if utils.IsNetworkPreset(ctx) {
 		switch {
 		case ctx.IsSet(utils.MainnetFlag.Name):
-		case ctx.IsSet(utils.BepoliaFlag.Name):
-			network = "bepolia"
+		case ctx.IsSet(utils.SepoliaFlag.Name):
+			network = "sepolia"
 		default:
 			return fmt.Errorf("unsupported network, no known era1 checksums")
 		}
