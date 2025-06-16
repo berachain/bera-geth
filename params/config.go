@@ -447,28 +447,29 @@ type ChainConfig struct {
 	Clique             *CliqueConfig       `json:"clique,omitempty"`
 	BlobScheduleConfig *BlobScheduleConfig `json:"blobSchedule,omitempty"`
 
-	// Berachain config, nil if not active
-	Berachain *BerachainConfig `json:"berachain,omitempty"`
+	// Berachain config
+	Berachain BerachainConfig `json:"berachain,omitempty"`
 }
 
 // BerachainConfig is the berachain config.
 type BerachainConfig struct {
-	// Prague1 Fork Values
-	//
-	// Prague1Time is the time of the Prague1 fork.
-	Prague1Time *uint64 `json:"prague1Time,omitempty"` // Prague1 switch time (nil = no fork, 0 = already on prague1)
-	// MinimumBaseFeeWei is the minimum base fee in wei.
-	MinimumBaseFeeWei uint64 `json:"eip1559MinimumBaseFeeWei"`
-	// BaseFeeChangeDenominator is the base fee change denominator.
-	BaseFeeChangeDenominator uint64 `json:"eip1559BaseFeeChangeDenominator"`
+	// Prague1 fork values, nil if not active
+	Prague1 struct {
+		// Time is the time of the Prague1 fork.
+		Time *uint64 `json:"time,omitempty"` // Prague1 switch time (nil = no fork, 0 = already on prague1)
+		// BaseFeeChangeDenominator is the base fee change denominator.
+		BaseFeeChangeDenominator uint64 `json:"baseFeeChangeDenominator,omitempty"`
+		// MinimumBaseFeeWei is the minimum base fee in wei.
+		MinimumBaseFeeWei uint64 `json:"minimumBaseFeeWei,omitempty"`
+	} `json:"prague1,omitempty"`
 }
 
 // String implements the stringer interface.
 func (o *BerachainConfig) String() string {
-	if o.Prague1Time != nil {
+	if o.Prague1.Time != nil {
 		return fmt.Sprintf(
-			"berachain(prague1Time: %v, minimumBaseFee: %v wei, baseFeeChangeDenominator: %v)",
-			*o.Prague1Time, o.MinimumBaseFeeWei, o.BaseFeeChangeDenominator,
+			"berachain(prague1Time: %v, baseFeeChangeDenominator: %v, minimumBaseFeeWei: %v)",
+			*o.Prague1.Time, o.Prague1.BaseFeeChangeDenominator, o.Prague1.MinimumBaseFeeWei,
 		)
 	}
 	return "berachain"
@@ -562,8 +563,8 @@ func (c *ChainConfig) Description() string {
 	if c.PragueTime != nil {
 		banner += fmt.Sprintf(" - Prague:                      @%-10v\n", *c.PragueTime)
 	}
-	if c.Berachain.Prague1Time != nil {
-		banner += fmt.Sprintf(" - Prague1:                     @%-10v\n", *c.Berachain.Prague1Time)
+	if c.Berachain.Prague1.Time != nil {
+		banner += fmt.Sprintf(" - Prague1:                     @%-10v\n", *c.Berachain.Prague1.Time)
 	}
 	if c.OsakaTime != nil {
 		banner += fmt.Sprintf(" - Osaka:                      @%-10v\n", *c.OsakaTime)
@@ -587,12 +588,6 @@ type BlobScheduleConfig struct {
 	Prague *BlobConfig `json:"prague,omitempty"`
 	Osaka  *BlobConfig `json:"osaka,omitempty"`
 	Verkle *BlobConfig `json:"verkle,omitempty"`
-}
-
-// IsBerachain returns whether the node is a berachain node or not.
-// TODO: add validation to startup to fail for if running bepolia or berachain is IsBerachain returns false.
-func (c *ChainConfig) IsBerachain() bool {
-	return c.Berachain != nil
 }
 
 // IsHomestead returns whether num is either equal to the homestead block or greater.
@@ -691,8 +686,9 @@ func (c *ChainConfig) IsPrague(num *big.Int, time uint64) bool {
 }
 
 // IsPrague1 returns whether time is either equal to the Prague1 fork time or greater.
-func (c *ChainConfig) IsPrague1(time uint64) bool {
-	return c.IsBerachain() && isTimestampForked(c.Berachain.Prague1Time, time)
+// NOTE: Prague1 is a Berachain fork and must be on Ethereum's Prague fork.
+func (c *ChainConfig) IsPrague1(num *big.Int, time uint64) bool {
+	return c.IsPrague(num, time) && isTimestampForked(c.Berachain.Prague1.Time, time)
 }
 
 // IsOsaka returns whether time is either equal to the Osaka fork time or greater.
@@ -778,7 +774,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "shanghaiTime", timestamp: c.ShanghaiTime},
 		{name: "cancunTime", timestamp: c.CancunTime, optional: true},
 		{name: "pragueTime", timestamp: c.PragueTime, optional: true},
-		{name: "prague1Time", timestamp: c.Berachain.Prague1Time, optional: true},
+		{name: "prague1Time", timestamp: c.Berachain.Prague1.Time, optional: true},
 		{name: "osakaTime", timestamp: c.OsakaTime, optional: true},
 		{name: "verkleTime", timestamp: c.VerkleTime, optional: true},
 	} {
@@ -924,8 +920,8 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, headNumber *big.Int, 
 	if isForkTimestampIncompatible(c.PragueTime, newcfg.PragueTime, headTimestamp) {
 		return newTimestampCompatError("Prague fork timestamp", c.PragueTime, newcfg.PragueTime)
 	}
-	if isForkTimestampIncompatible(c.Berachain.Prague1Time, newcfg.Berachain.Prague1Time, headTimestamp) {
-		return newTimestampCompatError("Prague1 fork timestamp", c.Berachain.Prague1Time, newcfg.Berachain.Prague1Time)
+	if isForkTimestampIncompatible(c.Berachain.Prague1.Time, newcfg.Berachain.Prague1.Time, headTimestamp) {
+		return newTimestampCompatError("Prague1 fork timestamp", c.Berachain.Prague1.Time, newcfg.Berachain.Prague1.Time)
 	}
 	if isForkTimestampIncompatible(c.OsakaTime, newcfg.OsakaTime, headTimestamp) {
 		return newTimestampCompatError("Osaka fork timestamp", c.OsakaTime, newcfg.OsakaTime)
