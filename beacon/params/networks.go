@@ -32,7 +32,6 @@ var checkpointSepolia string
 var checkpointHolesky string
 
 var (
-	// TODO: fix.
 	MainnetLightConfig = (&ChainConfig{
 		GenesisValidatorsRoot: common.HexToHash("0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95"),
 		GenesisTime:           1606824023,
@@ -45,8 +44,7 @@ var (
 		AddFork("DENEB", 269568, []byte{4, 0, 0, 0}).
 		AddFork("ELECTRA", 364032, []byte{5, 0, 0, 0})
 
-	// TODO: fix.
-	BepoliaLightConfig = (&ChainConfig{
+	SepoliaLightConfig = (&ChainConfig{
 		GenesisValidatorsRoot: common.HexToHash("0xd8ea171f3c94aea21ebc42a1ed61052acf3f9209c00e4efbaaddac09ed9b8078"),
 		GenesisTime:           1655733600,
 		Checkpoint:            common.HexToHash(checkpointSepolia),
@@ -57,4 +55,29 @@ var (
 		AddFork("CAPELLA", 56832, []byte{144, 0, 0, 114}).
 		AddFork("DENEB", 132608, []byte{144, 0, 0, 115}).
 		AddFork("ELECTRA", 222464, []byte{144, 0, 0, 116})
+
+	HoleskyLightConfig = (&ChainConfig{
+		GenesisValidatorsRoot: common.HexToHash("0x9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1"),
+		GenesisTime:           1695902400,
+		Checkpoint:            common.HexToHash(checkpointHolesky),
+	}).
+		AddFork("GENESIS", 0, []byte{1, 1, 112, 0}).
+		AddFork("ALTAIR", 0, []byte{2, 1, 112, 0}).
+		AddFork("BELLATRIX", 0, []byte{3, 1, 112, 0}).
+		AddFork("CAPELLA", 256, []byte{4, 1, 112, 0}).
+		AddFork("DENEB", 29696, []byte{5, 1, 112, 0}).
+		AddFork("ELECTRA", 115968, []byte{6, 1, 112, 0})
+
+	HoodiLightConfig = (&ChainConfig{
+		GenesisValidatorsRoot: common.HexToHash("0x212f13fc4df078b6cb7db228f1c8307566dcecf900867401a92023d7ba99cb5f"),
+		GenesisTime:           1742212800,
+		Checkpoint:            common.HexToHash(""),
+	}).
+		AddFork("GENESIS", 0, common.FromHex("0x10000910")).
+		AddFork("ALTAIR", 0, common.FromHex("0x20000910")).
+		AddFork("BELLATRIX", 0, common.FromHex("0x30000910")).
+		AddFork("CAPELLA", 0, common.FromHex("0x40000910")).
+		AddFork("DENEB", 0, common.FromHex("0x50000910")).
+		AddFork("ELECTRA", 2048, common.FromHex("0x60000910")).
+		AddFork("FULU", 18446744073709551615, common.FromHex("0x70000910"))
 )

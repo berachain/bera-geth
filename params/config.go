@@ -27,10 +27,16 @@ import (
 )
 
 // Genesis hashes to enforce below configs on.
-// TODO: fix.
 var (
 	MainnetGenesisHash = common.HexToHash("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
-	BepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
+	HoleskyGenesisHash = common.HexToHash("0xb5f7f912443c940f21fd611f12828d75b534364ed9e95ca4e307729a4661bde4")
+	SepoliaGenesisHash = common.HexToHash("0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9")
+	HoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
+
+	// Berachain
+	// TODO: fill in.
+	BerachainGenesisHash = common.HexToHash("")
+	BepoliaGenesisHash   = common.HexToHash("")
 )
 
 func newUint64(val uint64) *uint64 { return &val }
@@ -39,7 +45,6 @@ var (
 	MainnetTerminalTotalDifficulty, _ = new(big.Int).SetString("58_750_000_000_000_000_000_000", 0)
 
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
-	// TODO: fix.
 	MainnetChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(1),
 		HomesteadBlock:          big.NewInt(1_150_000),
@@ -64,9 +69,8 @@ var (
 		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cbb839cbe05303d7705fa"),
 		Ethash:                  new(EthashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun:  DefaultCancunBlobConfig,
-			Prague:  DefaultPragueBlobConfig,
-			Prague1: DefaultPrague1BlobConfig,
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultPragueBlobConfig,
 		},
 		Berachain: &BerachainConfig{
 			Prague1Time:              nil,        // TODO: set the fork time.
@@ -74,9 +78,38 @@ var (
 			BaseFeeChangeDenominator: 48,         // 6x increase from the default
 		},
 	}
-	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
-	// TODO: fix.
-	BepoliaChainConfig = &ChainConfig{
+	// HoleskyChainConfig contains the chain parameters to run a node on the Holesky test network.
+	HoleskyChainConfig = &ChainConfig{
+		ChainID:                 big.NewInt(17000),
+		HomesteadBlock:          big.NewInt(0),
+		DAOForkBlock:            nil,
+		DAOForkSupport:          true,
+		EIP150Block:             big.NewInt(0),
+		EIP155Block:             big.NewInt(0),
+		EIP158Block:             big.NewInt(0),
+		ByzantiumBlock:          big.NewInt(0),
+		ConstantinopleBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		IstanbulBlock:           big.NewInt(0),
+		MuirGlacierBlock:        nil,
+		BerlinBlock:             big.NewInt(0),
+		LondonBlock:             big.NewInt(0),
+		ArrowGlacierBlock:       nil,
+		GrayGlacierBlock:        nil,
+		TerminalTotalDifficulty: big.NewInt(0),
+		MergeNetsplitBlock:      nil,
+		ShanghaiTime:            newUint64(1696000704),
+		CancunTime:              newUint64(1707305664),
+		PragueTime:              newUint64(1740434112),
+		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
+		Ethash:                  new(EthashConfig),
+		BlobScheduleConfig: &BlobScheduleConfig{
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultPragueBlobConfig,
+		},
+	}
+	// SepoliaChainConfig contains the chain parameters to run a node on the Sepolia test network.
+	SepoliaChainConfig = &ChainConfig{
 		ChainID:                 big.NewInt(11155111),
 		HomesteadBlock:          big.NewInt(0),
 		DAOForkBlock:            nil,
@@ -101,9 +134,8 @@ var (
 		DepositContractAddress:  common.HexToAddress("0x7f02c3e3c98b133055b8b348b2ac625669ed295d"),
 		Ethash:                  new(EthashConfig),
 		BlobScheduleConfig: &BlobScheduleConfig{
-			Cancun:  DefaultCancunBlobConfig,
-			Prague:  DefaultPragueBlobConfig,
-			Prague1: DefaultPrague1BlobConfig,
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultPragueBlobConfig,
 		},
 		Berachain: &BerachainConfig{
 			Prague1Time:              nil,        // TODO: set the fork time.
@@ -111,6 +143,42 @@ var (
 			BaseFeeChangeDenominator: 48,         // 6x increase from the default
 		},
 	}
+	// HoodiChainConfig contains the chain parameters to run a node on the Hoodi test network.
+	HoodiChainConfig = &ChainConfig{
+		ChainID:                 big.NewInt(560048),
+		HomesteadBlock:          big.NewInt(0),
+		DAOForkBlock:            nil,
+		DAOForkSupport:          true,
+		EIP150Block:             big.NewInt(0),
+		EIP155Block:             big.NewInt(0),
+		EIP158Block:             big.NewInt(0),
+		ByzantiumBlock:          big.NewInt(0),
+		ConstantinopleBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		IstanbulBlock:           big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
+		BerlinBlock:             big.NewInt(0),
+		LondonBlock:             big.NewInt(0),
+		ArrowGlacierBlock:       nil,
+		GrayGlacierBlock:        nil,
+		TerminalTotalDifficulty: big.NewInt(0),
+		MergeNetsplitBlock:      big.NewInt(0),
+		ShanghaiTime:            newUint64(0),
+		CancunTime:              newUint64(0),
+		PragueTime:              newUint64(1742999832),
+		DepositContractAddress:  common.HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa"),
+		Ethash:                  new(EthashConfig),
+		BlobScheduleConfig: &BlobScheduleConfig{
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultPragueBlobConfig,
+		},
+	}
+	// BerachainChainConfig is the chain parameters to run a node on the Berachain network.
+	// TODO: implement.
+	BerachainChainConfig = &ChainConfig{}
+	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
+	// TODO: implement.
+	BepoliaChainConfig = &ChainConfig{}
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Ethash consensus.
 	AllEthashProtocolChanges = &ChainConfig{
@@ -302,15 +370,9 @@ var (
 	}
 	// DefaultPragueBlobConfig is the default blob configuration for the Prague fork.
 	DefaultPragueBlobConfig = &BlobConfig{
-		Target:         3,
-		Max:            6,
-		UpdateFraction: 3338477,
-	}
-	// DefaultPrague1BlobConfig is the default blob configuration for the Prague1 fork.
-	DefaultPrague1BlobConfig = &BlobConfig{
-		Target:         3,
-		Max:            6,
-		UpdateFraction: 3338477,
+		Target:         6,
+		Max:            9,
+		UpdateFraction: 5007716,
 	}
 	// DefaultOsakaBlobConfig is the default blob configuration for the Osaka fork.
 	DefaultOsakaBlobConfig = &BlobConfig{
@@ -320,17 +382,18 @@ var (
 	}
 	// DefaultBlobSchedule is the latest configured blob schedule for Ethereum mainnet.
 	DefaultBlobSchedule = &BlobScheduleConfig{
-		Cancun:  DefaultCancunBlobConfig,
-		Prague:  DefaultPragueBlobConfig,
-		Prague1: DefaultPrague1BlobConfig,
-		Osaka:   DefaultOsakaBlobConfig,
+		Cancun: DefaultCancunBlobConfig,
+		Prague: DefaultPragueBlobConfig,
+		Osaka:  DefaultOsakaBlobConfig,
 	}
 )
 
 // NetworkNames are user friendly names to use in the chain spec banner.
 var NetworkNames = map[string]string{
 	MainnetChainConfig.ChainID.String(): "mainnet",
-	BepoliaChainConfig.ChainID.String(): "bepolia",
+	SepoliaChainConfig.ChainID.String(): "sepolia",
+	HoleskyChainConfig.ChainID.String(): "holesky",
+	HoodiChainConfig.ChainID.String():   "hoodi",
 }
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -398,20 +461,6 @@ type ChainConfig struct {
 	Berachain *BerachainConfig `json:"berachain,omitempty"`
 }
 
-// EthashConfig is the consensus engine configs for proof-of-work based sealing.
-type EthashConfig struct{}
-
-// String implements the stringer interface, returning the consensus engine details.
-func (c EthashConfig) String() string {
-	return "ethash"
-}
-
-// CliqueConfig is the consensus engine configs for proof-of-authority based sealing.
-type CliqueConfig struct {
-	Period uint64 `json:"period"` // Number of seconds between blocks to enforce
-	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
-}
-
 // BerachainConfig is the berachain config.
 type BerachainConfig struct {
 	// Prague1 Fork Values
@@ -433,6 +482,20 @@ func (o *BerachainConfig) String() string {
 		)
 	}
 	return "berachain"
+}
+
+// EthashConfig is the consensus engine configs for proof-of-work based sealing.
+type EthashConfig struct{}
+
+// String implements the stringer interface, returning the consensus engine details.
+func (c EthashConfig) String() string {
+	return "ethash"
+}
+
+// CliqueConfig is the consensus engine configs for proof-of-authority based sealing.
+type CliqueConfig struct {
+	Period uint64 `json:"period"` // Number of seconds between blocks to enforce
+	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
 }
 
 // String implements the stringer interface, returning the consensus engine details.
@@ -530,14 +593,14 @@ type BlobConfig struct {
 
 // BlobScheduleConfig determines target and max number of blobs allow per fork.
 type BlobScheduleConfig struct {
-	Cancun  *BlobConfig `json:"cancun,omitempty"`
-	Prague  *BlobConfig `json:"prague,omitempty"`
-	Prague1 *BlobConfig `json:"prague1,omitempty"`
-	Osaka   *BlobConfig `json:"osaka,omitempty"`
-	Verkle  *BlobConfig `json:"verkle,omitempty"`
+	Cancun *BlobConfig `json:"cancun,omitempty"`
+	Prague *BlobConfig `json:"prague,omitempty"`
+	Osaka  *BlobConfig `json:"osaka,omitempty"`
+	Verkle *BlobConfig `json:"verkle,omitempty"`
 }
 
 // IsBerachain returns whether the node is a berachain node or not.
+// TODO: add validation to startup to fail for if running bepolia or berachain is IsBerachain returns false.
 func (c *ChainConfig) IsBerachain() bool {
 	return c.Berachain != nil
 }
@@ -776,7 +839,6 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 	}{
 		{name: "cancun", timestamp: c.CancunTime, config: bsc.Cancun},
 		{name: "prague", timestamp: c.PragueTime, config: bsc.Prague},
-		{name: "prague1", timestamp: c.Berachain.Prague1Time, config: bsc.Prague1},
 		{name: "osaka", timestamp: c.OsakaTime, config: bsc.Osaka},
 	} {
 		if cur.config != nil {
@@ -907,8 +969,6 @@ func (c *ChainConfig) LatestFork(time uint64) forks.Fork {
 	switch {
 	case c.IsOsaka(london, time):
 		return forks.Osaka
-	case c.IsPrague1(time):
-		return forks.Prague1
 	case c.IsPrague(london, time):
 		return forks.Prague
 	case c.IsCancun(london, time):
@@ -926,8 +986,6 @@ func (c *ChainConfig) Timestamp(fork forks.Fork) *uint64 {
 	switch {
 	case fork == forks.Osaka:
 		return c.OsakaTime
-	case fork == forks.Prague1:
-		return c.Berachain.Prague1Time
 	case fork == forks.Prague:
 		return c.PragueTime
 	case fork == forks.Cancun:
@@ -1074,13 +1132,13 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                                     *big.Int
-	IsHomestead, IsEIP150, IsEIP155, IsEIP158                   bool
-	IsEIP2929, IsEIP4762                                        bool
-	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul     bool
-	IsBerlin, IsLondon                                          bool
-	IsMerge, IsShanghai, IsCancun, IsPrague, IsPrague1, IsOsaka bool
-	IsVerkle                                                    bool
+	ChainID                                                 *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsEIP2929, IsEIP4762                                    bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
+	IsBerlin, IsLondon                                      bool
+	IsMerge, IsShanghai, IsCancun, IsPrague, IsOsaka        bool
+	IsVerkle                                                bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1109,7 +1167,6 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsShanghai:       isMerge && c.IsShanghai(num, timestamp),
 		IsCancun:         isMerge && c.IsCancun(num, timestamp),
 		IsPrague:         isMerge && c.IsPrague(num, timestamp),
-		IsPrague1:        isMerge && c.IsPrague1(timestamp),
 		IsOsaka:          isMerge && c.IsOsaka(num, timestamp),
 		IsVerkle:         isVerkle,
 		IsEIP4762:        isVerkle,

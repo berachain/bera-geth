@@ -285,16 +285,32 @@ func main() {
 func prepare(ctx *cli.Context) {
 	// If we're running a known preset, log it for convenience.
 	switch {
+	case ctx.IsSet(utils.MainnetFlag.Name):
+		log.Info("Starting Geth on Berachain mainnet...")
+
+	case ctx.IsSet(utils.SepoliaFlag.Name):
+		log.Info("Starting Geth on Sepolia testnet...")
+
+	case ctx.IsSet(utils.HoleskyFlag.Name):
+		log.Info("Starting Geth on Holesky testnet...")
+
+	case ctx.IsSet(utils.HoodiFlag.Name):
+		log.Info("Starting Geth on Hoodi testnet...")
+
 	case ctx.IsSet(utils.BepoliaFlag.Name):
 		log.Info("Starting Geth on Bepolia testnet...")
 
-	case !ctx.IsSet(utils.NetworkIdFlag.Name):
-		log.Info("Starting Geth on Ethereum mainnet...")
+	case !ctx.IsSet(utils.NetworkIdFlag.Name), ctx.IsSet(utils.BerachainFlag.Name):
+		log.Info("Starting Geth on Berachain mainnet...")
 	}
-	// If we're a full node on mainnet without --cache specified, bump default cache allowance
+
+	// If we're a full node on Berachain mainnet without --cache specified, bump default cache allowance
 	if !ctx.IsSet(utils.CacheFlag.Name) && !ctx.IsSet(utils.NetworkIdFlag.Name) {
 		// Make sure we're not on any supported preconfigured testnet either
-		if !ctx.IsSet(utils.BepoliaFlag.Name) &&
+		if !ctx.IsSet(utils.HoleskyFlag.Name) &&
+			!ctx.IsSet(utils.SepoliaFlag.Name) &&
+			!ctx.IsSet(utils.HoodiFlag.Name) &&
+			!ctx.IsSet(utils.BepoliaFlag.Name) &&
 			!ctx.IsSet(utils.DeveloperFlag.Name) {
 			// Nope, we're really on mainnet. Bump that cache up!
 			log.Info("Bumping default cache on mainnet", "provided", ctx.Int(utils.CacheFlag.Name), "updated", 4096)

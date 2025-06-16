@@ -80,14 +80,12 @@ type PrunePoint struct {
 // given block.
 var PrunePoints = map[common.Hash]*PrunePoint{
 	// mainnet
-	// TODO: fix.
 	params.MainnetGenesisHash: {
 		BlockNumber: 15537393,
 		BlockHash:   common.HexToHash("0x55b11b918355b1ef9c5db810302ebad0bf2544255b530cdce90674d5887bb286"),
 	},
-	// bepolia
-	// TODO: fix.
-	params.BepoliaGenesisHash: {
+	// sepolia
+	params.SepoliaGenesisHash: {
 		BlockNumber: 1450409,
 		BlockHash:   common.HexToHash("0x229f6b18ca1552f1d5146deceb5387333f40dc6275aebee3f2c5c4ece07d02db"),
 	},

@@ -86,6 +86,15 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			wantConfig: params.MainnetChainConfig,
 		},
 		{
+			name: "berachain block in DB, genesis == nil",
+			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
+				DefaultBerachainGenesisBlock().MustCommit(db, triedb.NewDatabase(db, newDbConfig(scheme)))
+				return SetupGenesisBlock(db, triedb.NewDatabase(db, newDbConfig(scheme)), nil)
+			},
+			wantHash:   params.BerachainGenesisHash,
+			wantConfig: params.BerachainChainConfig,
+		},
+		{
 			name: "custom block in DB, genesis == nil",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
@@ -100,9 +109,27 @@ func testSetupGenesis(t *testing.T, scheme string) {
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
 				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
 				customg.Commit(db, tdb)
+				return SetupGenesisBlock(db, tdb, DefaultSepoliaGenesisBlock())
+			},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.SepoliaGenesisHash},
+		},
+		{
+			name: "custom block in DB, genesis == bepolia",
+			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
+				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
+				customg.Commit(db, tdb)
 				return SetupGenesisBlock(db, tdb, DefaultBepoliaGenesisBlock())
 			},
 			wantErr: &GenesisMismatchError{Stored: customghash, New: params.BepoliaGenesisHash},
+		},
+		{
+			name: "custom block in DB, genesis == hoodi",
+			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, *params.ConfigCompatError, error) {
+				tdb := triedb.NewDatabase(db, newDbConfig(scheme))
+				customg.Commit(db, tdb)
+				return SetupGenesisBlock(db, tdb, DefaultHoodiGenesisBlock())
+			},
+			wantErr: &GenesisMismatchError{Stored: customghash, New: params.HoodiGenesisHash},
 		},
 		{
 			name: "compatible config in DB",
@@ -177,6 +204,10 @@ func TestGenesisHashes(t *testing.T) {
 		want    common.Hash
 	}{
 		{DefaultGenesisBlock(), params.MainnetGenesisHash},
+		{DefaultSepoliaGenesisBlock(), params.SepoliaGenesisHash},
+		{DefaultHoleskyGenesisBlock(), params.HoleskyGenesisHash},
+		{DefaultHoodiGenesisBlock(), params.HoodiGenesisHash},
+		{DefaultBerachainGenesisBlock(), params.BerachainGenesisHash},
 		{DefaultBepoliaGenesisBlock(), params.BepoliaGenesisHash},
 	} {
 		// Test via MustCommit
