@@ -25,6 +25,8 @@ It outputs a const declaration that contains an RLP-encoded list of (address, ba
 */
 package main
 
+// TODO: run this for Berachain mainnet + Bepolia genesis files.
+
 import (
 	"encoding/json"
 	"fmt"

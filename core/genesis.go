@@ -217,6 +217,14 @@ func getGenesisState(db ethdb.Database, blockhash common.Hash) (alloc types.Gene
 	switch blockhash {
 	case params.MainnetGenesisHash:
 		genesis = DefaultGenesisBlock()
+	case params.SepoliaGenesisHash:
+		genesis = DefaultSepoliaGenesisBlock()
+	case params.HoleskyGenesisHash:
+		genesis = DefaultHoleskyGenesisBlock()
+	case params.HoodiGenesisHash:
+		genesis = DefaultHoodiGenesisBlock()
+	case params.BerachainGenesisHash:
+		genesis = DefaultBerachainGenesisBlock()
 	case params.BepoliaGenesisHash:
 		genesis = DefaultBepoliaGenesisBlock()
 	}
@@ -428,6 +436,14 @@ func (g *Genesis) chainConfigOrDefault(ghash common.Hash, stored *params.ChainCo
 		return g.Config
 	case ghash == params.MainnetGenesisHash:
 		return params.MainnetChainConfig
+	case ghash == params.HoleskyGenesisHash:
+		return params.HoleskyChainConfig
+	case ghash == params.SepoliaGenesisHash:
+		return params.SepoliaChainConfig
+	case ghash == params.HoodiGenesisHash:
+		return params.HoodiChainConfig
+	case ghash == params.BerachainGenesisHash:
+		return params.BerachainChainConfig
 	case ghash == params.BepoliaGenesisHash:
 		return params.BepoliaChainConfig
 	default:
@@ -587,7 +603,7 @@ func EnableVerkleAtGenesis(db ethdb.Database, genesis *Genesis) (bool, error) {
 	return false, nil
 }
 
-// DefaultGenesisBlock returns the Berachain mainnet genesis block.
+// DefaultGenesisBlock returns the Ethereum main net genesis block.
 func DefaultGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.MainnetChainConfig,
@@ -599,16 +615,67 @@ func DefaultGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultBepoliaGenesisBlock returns the Bepolia network genesis block.
-func DefaultBepoliaGenesisBlock() *Genesis {
+// DefaultSepoliaGenesisBlock returns the Sepolia network genesis block.
+func DefaultSepoliaGenesisBlock() *Genesis {
 	return &Genesis{
-		Config:     params.BepoliaChainConfig,
+		Config:     params.SepoliaChainConfig,
 		Nonce:      0,
 		ExtraData:  []byte("Sepolia, Athens, Attica, Greece!"),
 		GasLimit:   0x1c9c380,
 		Difficulty: big.NewInt(0x20000),
 		Timestamp:  1633267481,
 		Alloc:      decodePrealloc(sepoliaAllocData),
+	}
+}
+
+// DefaultHoleskyGenesisBlock returns the Holesky network genesis block.
+func DefaultHoleskyGenesisBlock() *Genesis {
+	return &Genesis{
+		Config:     params.HoleskyChainConfig,
+		Nonce:      0x1234,
+		GasLimit:   0x17d7840,
+		Difficulty: big.NewInt(0x01),
+		Timestamp:  1695902100,
+		Alloc:      decodePrealloc(holeskyAllocData),
+	}
+}
+
+// DefaultHoodiGenesisBlock returns the Hoodi network genesis block.
+func DefaultHoodiGenesisBlock() *Genesis {
+	return &Genesis{
+		Config:     params.HoodiChainConfig,
+		Nonce:      0x1234,
+		GasLimit:   0x2255100,
+		Difficulty: big.NewInt(0x01),
+		Timestamp:  1742212800,
+		Alloc:      decodePrealloc(hoodiAllocData),
+	}
+}
+
+// DefaultBerachainGenesisBlock returns the Berachain main net genesis block.
+// TODO: fix.
+func DefaultBerachainGenesisBlock() *Genesis {
+	return &Genesis{
+		Config:     params.BerachainChainConfig,
+		Nonce:      66,
+		ExtraData:  hexutil.MustDecode("TODO: fix"),
+		GasLimit:   5000,
+		Difficulty: big.NewInt(17179869184),
+		Alloc:      decodePrealloc("TODO: get from mkalloc"),
+	}
+}
+
+// DefaultSepoliaGenesisBlock returns the Bepolia network genesis block.
+// TODO: fix.
+func DefaultBepoliaGenesisBlock() *Genesis {
+	return &Genesis{
+		Config:     params.BepoliaChainConfig,
+		Nonce:      0,
+		ExtraData:  []byte("TODO: fix"),
+		GasLimit:   0x1c9c380,
+		Difficulty: big.NewInt(0x20000),
+		Timestamp:  1633267481,
+		Alloc:      decodePrealloc("TODO: get from mkalloc"),
 	}
 }
 

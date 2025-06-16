@@ -45,7 +45,7 @@ var (
 			testTAPFlag,
 			testSlowFlag,
 			testArchiveFlag,
-			testBepoliaFlag,
+			testSepoliaFlag,
 			testMainnetFlag,
 			filterQueryFileFlag,
 			historyTestFileFlag,
@@ -75,14 +75,24 @@ var (
 		Value:    false,
 		Category: flags.TestingCategory,
 	}
-	testBepoliaFlag = &cli.BoolFlag{
-		Name:     "bepolia",
-		Usage:    "Use test cases for bepolia network",
+	testSepoliaFlag = &cli.BoolFlag{
+		Name:     "sepolia",
+		Usage:    "Use test cases for sepolia network",
 		Category: flags.TestingCategory,
 	}
 	testMainnetFlag = &cli.BoolFlag{
 		Name:     "mainnet",
 		Usage:    "Use test cases for mainnet network",
+		Category: flags.TestingCategory,
+	}
+	testBepoliaFlag = &cli.BoolFlag{
+		Name:     "bepolia",
+		Usage:    "Use test cases for bepolia network",
+		Category: flags.TestingCategory,
+	}
+	testBerachainFlag = &cli.BoolFlag{
+		Name:     "berachain",
+		Usage:    "Use test cases for berachain mainnet network",
 		Category: flags.TestingCategory,
 	}
 )
@@ -117,10 +127,13 @@ func validateHistoryPruneErr(err error, blockNum uint64, historyPruneBlock *uint
 	return err
 }
 
+// TODO; Add test filter & history queries for Berachain mainnet & Bepolia networks in queries/
 func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
-	flags.CheckExclusive(ctx, testMainnetFlag, testBepoliaFlag)
-	if (ctx.IsSet(testMainnetFlag.Name) || ctx.IsSet(testBepoliaFlag.Name)) && ctx.IsSet(filterQueryFileFlag.Name) {
-		exit(filterQueryFileFlag.Name + " cannot be used with " + testMainnetFlag.Name + " or " + testBepoliaFlag.Name)
+	flags.CheckExclusive(ctx, testMainnetFlag, testSepoliaFlag, testBerachainFlag, testBepoliaFlag)
+	if (ctx.IsSet(testMainnetFlag.Name) || ctx.IsSet(testSepoliaFlag.Name) || ctx.IsSet(testBerachainFlag.Name) || ctx.IsSet(testBepoliaFlag.Name)) &&
+		ctx.IsSet(filterQueryFileFlag.Name) {
+		exit(filterQueryFileFlag.Name + " cannot be used with " + testMainnetFlag.Name + " or " +
+			testSepoliaFlag.Name + "or" + testBerachainFlag.Name + " or " + testBepoliaFlag.Name)
 	}
 
 	// configure ethclient
@@ -135,6 +148,20 @@ func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 		cfg.historyPruneBlock = new(uint64)
 		*cfg.historyPruneBlock = history.PrunePoints[params.MainnetGenesisHash].BlockNumber
 		cfg.traceTestFile = "queries/trace_mainnet.json"
+	case ctx.Bool(testSepoliaFlag.Name):
+		cfg.fsys = builtinTestFiles
+		cfg.filterQueryFile = "queries/filter_queries_sepolia.json"
+		cfg.historyTestFile = "queries/history_sepolia.json"
+		cfg.historyPruneBlock = new(uint64)
+		*cfg.historyPruneBlock = history.PrunePoints[params.SepoliaGenesisHash].BlockNumber
+		cfg.traceTestFile = "queries/trace_sepolia.json"
+	case ctx.Bool(testBerachainFlag.Name):
+		cfg.fsys = builtinTestFiles
+		cfg.filterQueryFile = "queries/filter_queries_berachain.json"
+		cfg.historyTestFile = "queries/history_berachain.json"
+		cfg.historyPruneBlock = new(uint64)
+		*cfg.historyPruneBlock = history.PrunePoints[params.BerachainGenesisHash].BlockNumber
+		cfg.traceTestFile = "queries/trace_berachain.json"
 	case ctx.Bool(testBepoliaFlag.Name):
 		cfg.fsys = builtinTestFiles
 		cfg.filterQueryFile = "queries/filter_queries_bepolia.json"
