@@ -127,7 +127,7 @@ func validateHistoryPruneErr(err error, blockNum uint64, historyPruneBlock *uint
 	return err
 }
 
-// TODO; Add test filter & history queries for Berachain mainnet & Bepolia networks in queries/
+// TODO(testing): Add filter & history queries for Berachain mainnet & Bepolia networks in queries/
 func testConfigFromCLI(ctx *cli.Context) (cfg testConfig) {
 	flags.CheckExclusive(ctx, testMainnetFlag, testSepoliaFlag, testBerachainFlag, testBepoliaFlag)
 	if (ctx.IsSet(testMainnetFlag.Name) || ctx.IsSet(testSepoliaFlag.Name) || ctx.IsSet(testBerachainFlag.Name) || ctx.IsSet(testBepoliaFlag.Name)) &&
