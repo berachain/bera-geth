@@ -660,7 +660,7 @@ func maybeSkipArchive(env build.Environment) {
 func doDockerBuildx(cmdline []string) {
 	var (
 		platform = flag.String("platform", "", `Push a multi-arch docker image for the specified architectures (usually "linux/amd64,linux/arm64")`)
-		hubImage = flag.String("hub", "ethereum/client-go", `Where to upload the docker image`)
+		hubImage = flag.String("hub", "ghcr.io/berachain/bera-geth", `Where to upload the docker image`)
 		upload   = flag.Bool("upload", false, `Whether to trigger upload`)
 	)
 	flag.CommandLine.Parse(cmdline)
@@ -674,7 +674,7 @@ func doDockerBuildx(cmdline []string) {
 	pass := getenvBase64("DOCKER_HUB_PASSWORD")
 
 	if len(user) > 0 && len(pass) > 0 {
-		auther := exec.Command("docker", "login", "-u", string(user), "--password-stdin")
+		auther := exec.Command("docker", "login", "ghcr.io", "-u", string(user), "--password-stdin")
 		auther.Stdin = bytes.NewReader(pass)
 		build.MustRun(auther)
 	}
@@ -690,7 +690,7 @@ func doDockerBuildx(cmdline []string) {
 	var tags []string
 
 	switch {
-	case env.Branch == "master":
+	case env.Branch == "master", env.Branch == "prepare-fork": // TODO: revert changes for testing.
 		tags = []string{"latest"}
 	case strings.HasPrefix(env.Tag, "v1."):
 		tags = []string{"stable", fmt.Sprintf("release-%v", version.Family), "v" + version.Semantic}

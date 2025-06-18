@@ -1,3 +1,5 @@
+# NOTE: Replaced by .circleci/config.yml
+
 machine:
   services:
     - docker

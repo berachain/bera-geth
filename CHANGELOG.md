@@ -13,3 +13,9 @@ and this project adheres to
 - Add support for the Berachain mainnet (`--berachain`) and Bepolia networks
   (`--bepolia`)
 - Add support for configuring the Prague1 fork on Berachain networks.
+
+### Changed
+
+- Updated release GH workflow to publish tarballs and push built images to GHCR.
+- Removed support for travis-ci and appveyor ci.
+- Moved circleci config to .circleci/config.yml.
