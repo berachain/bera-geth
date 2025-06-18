@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - "master"
+      - "prepare-fork" # testing, TODO: remove.
     tags:
       - "v*"
 
@@ -29,11 +30,10 @@ jobs:
 
     - name: Create/upload archive (amd64)
       run: |
-        go run build/ci.go archive -arch amd64 -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch amd64 -type tar -signer LINUX_SIGNING_KEY
         rm -f build/bin/*
       env:
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
     - name: Build (386)
       run: |
@@ -41,11 +41,10 @@ jobs:
 
     - name: Create/upload archive (386)
       run: |
-        go run build/ci.go archive -arch 386 -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch 386 -type tar -signer LINUX_SIGNING_KEY
         rm -f build/bin/*
       env:
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
   linux-arm:
     name: Linux Build (arm)
@@ -71,11 +70,10 @@ jobs:
 
     - name: Create/upload archive (arm64)
       run: |
-        go run build/ci.go archive -arch arm64 -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch arm64 -type tar -signer LINUX_SIGNING_KEY
         rm -fr build/bin/*
       env:
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
     - name: Run build (arm5)
       run: |
@@ -85,11 +83,10 @@ jobs:
 
     - name: Create/upload archive (arm5)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
       env:
         GOARM: "5"
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
     - name: Run build (arm6)
       run: |
@@ -99,12 +96,11 @@ jobs:
 
     - name: Create/upload archive (arm6)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
         rm -fr build/bin/*
       env:
         GOARM: "6"
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
     - name: Run build (arm7)
       run: |
@@ -114,16 +110,20 @@ jobs:
 
     - name: Create/upload archive (arm7)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY -upload gethstore/builds
+        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
         rm -fr build/bin/*
       env:
         GOARM: "7"
         LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
-        AZURE_BLOBSTORE_TOKEN: ${{ secrets.AZURE_BLOBSTORE_TOKEN }}
 
   docker:
     name: Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
     - uses: actions/checkout@v4
 
@@ -139,9 +139,13 @@ jobs:
         go-version: 1.24
         cache: false
 
-    - name: Run docker build
-      env:
-        DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-        DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push multi-arch image to GHCR
       run: |
-        go run build/ci.go dockerx -platform linux/amd64,linux/arm64,linux/riscv64 -upload
+        go run build/ci.go dockerx -platform linux/amd64,linux/arm64,linux/riscv64 -hub ghcr.io/berachain/bera-geth -upload
