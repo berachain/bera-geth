@@ -34,9 +34,8 @@ var (
 	HoodiGenesisHash   = common.HexToHash("0xbbe312868b376a3001692a646dd2d7d1e4406380dfd86b98aa8a34d1557c971b")
 
 	// Berachain
-	// TODO: fill in.
-	BerachainGenesisHash = common.HexToHash("")
-	BepoliaGenesisHash   = common.HexToHash("")
+	BerachainGenesisHash = common.HexToHash("0xd57819422128da1c44339fc7956662378c17e2213e669b427ac91cd11dfcfb38")
+	BepoliaGenesisHash   = common.HexToHash("0x0207661de38f0e54ba91c8286096e72486784c79dc6a9681fc486b38335c042f")
 )
 
 func newUint64(val uint64) *uint64 { return &val }
@@ -164,11 +163,79 @@ var (
 		},
 	}
 	// BerachainChainConfig is the chain parameters to run a node on the Berachain network.
-	// TODO: implement.
-	BerachainChainConfig = &ChainConfig{}
+	BerachainChainConfig = &ChainConfig{
+		ChainID:                 big.NewInt(80094),
+		HomesteadBlock:          big.NewInt(0),
+		DAOForkBlock:            big.NewInt(0),
+		DAOForkSupport:          true,
+		EIP150Block:             big.NewInt(0),
+		EIP155Block:             big.NewInt(0),
+		EIP158Block:             big.NewInt(0),
+		ByzantiumBlock:          big.NewInt(0),
+		ConstantinopleBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		IstanbulBlock:           big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
+		BerlinBlock:             big.NewInt(0),
+		LondonBlock:             big.NewInt(0),
+		ArrowGlacierBlock:       big.NewInt(0),
+		GrayGlacierBlock:        big.NewInt(0),
+		TerminalTotalDifficulty: big.NewInt(0),
+		MergeNetsplitBlock:      big.NewInt(0),
+		ShanghaiTime:            newUint64(0),
+		CancunTime:              newUint64(0),
+		PragueTime:              newUint64(1749056400),
+		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
+		Ethash:                  new(EthashConfig),
+		BlobScheduleConfig: &BlobScheduleConfig{
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultBerachainPragueBlobConfig,
+		},
+		Berachain: BerachainConfig{
+			Prague1: Prague1Config{
+				Time:                     newUint64(999999999999999),
+				MinimumBaseFeeWei:        1000000000, // 1 gwei
+				BaseFeeChangeDenominator: 48,         // 6x increase from the default
+			},
+		},
+	}
 	// BepoliaChainConfig contains the chain parameters to run a node on the Bepolia test network.
-	// TODO: implement.
-	BepoliaChainConfig = &ChainConfig{}
+	BepoliaChainConfig = &ChainConfig{
+		ChainID:                 big.NewInt(80069),
+		HomesteadBlock:          big.NewInt(0),
+		DAOForkBlock:            big.NewInt(0),
+		DAOForkSupport:          true,
+		EIP150Block:             big.NewInt(0),
+		EIP155Block:             big.NewInt(0),
+		EIP158Block:             big.NewInt(0),
+		ByzantiumBlock:          big.NewInt(0),
+		ConstantinopleBlock:     big.NewInt(0),
+		PetersburgBlock:         big.NewInt(0),
+		IstanbulBlock:           big.NewInt(0),
+		MuirGlacierBlock:        big.NewInt(0),
+		BerlinBlock:             big.NewInt(0),
+		LondonBlock:             big.NewInt(0),
+		ArrowGlacierBlock:       big.NewInt(0),
+		GrayGlacierBlock:        big.NewInt(0),
+		TerminalTotalDifficulty: big.NewInt(0),
+		MergeNetsplitBlock:      big.NewInt(0),
+		ShanghaiTime:            newUint64(0),
+		CancunTime:              newUint64(0),
+		PragueTime:              newUint64(1746633600),
+		DepositContractAddress:  common.HexToAddress("0x4242424242424242424242424242424242424242"),
+		Ethash:                  new(EthashConfig),
+		BlobScheduleConfig: &BlobScheduleConfig{
+			Cancun: DefaultCancunBlobConfig,
+			Prague: DefaultBerachainPragueBlobConfig,
+		},
+		Berachain: BerachainConfig{
+			Prague1: Prague1Config{
+				Time:                     newUint64(999999999999999),
+				MinimumBaseFeeWei:        1000000000, // 1 gwei
+				BaseFeeChangeDenominator: 48,         // 6x increase from the default
+			},
+		},
+	}
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Ethash consensus.
 	AllEthashProtocolChanges = &ChainConfig{
@@ -364,6 +431,13 @@ var (
 		Max:            9,
 		UpdateFraction: 5007716,
 	}
+	// DefaultBerachainPragueBlobConfig is the default blob configuration for the Prague fork
+	// on Berachain networks.
+	DefaultBerachainPragueBlobConfig = &BlobConfig{
+		Target:         3,
+		Max:            6,
+		UpdateFraction: 3338477,
+	}
 	// DefaultOsakaBlobConfig is the default blob configuration for the Osaka fork.
 	DefaultOsakaBlobConfig = &BlobConfig{
 		Target:         6,
@@ -453,26 +527,39 @@ type ChainConfig struct {
 
 // BerachainConfig is the berachain config.
 type BerachainConfig struct {
-	// Prague1 fork values, nil if not active
-	Prague1 struct {
-		// Time is the time of the Prague1 fork.
-		Time *uint64 `json:"time,omitempty"` // Prague1 switch time (nil = no fork, 0 = already on prague1)
-		// BaseFeeChangeDenominator is the base fee change denominator.
-		BaseFeeChangeDenominator uint64 `json:"baseFeeChangeDenominator,omitempty"`
-		// MinimumBaseFeeWei is the minimum base fee in wei.
-		MinimumBaseFeeWei uint64 `json:"minimumBaseFeeWei,omitempty"`
-	} `json:"prague1,omitempty"`
+	// Prague1 fork values.
+	Prague1 Prague1Config `json:"prague1,omitempty"`
 }
 
 // String implements the stringer interface.
 func (o *BerachainConfig) String() string {
+	banner := "berachain"
 	if o.Prague1.Time != nil {
-		return fmt.Sprintf(
-			"berachain(prague1Time: %v, baseFeeChangeDenominator: %v, minimumBaseFeeWei: %v)",
-			*o.Prague1.Time, o.Prague1.BaseFeeChangeDenominator, o.Prague1.MinimumBaseFeeWei,
+		banner += fmt.Sprintf("(%s)", o.Prague1)
+	}
+	return banner
+}
+
+// Prague1Config is the config values for the Prague1 fork on Berachain.
+type Prague1Config struct {
+	// Time is the time of the Prague1 fork.
+	Time *uint64 `json:"time,omitempty"` // Prague1 switch time (0 = already on prague1, nil = no fork)
+	// BaseFeeChangeDenominator is the base fee change denominator.
+	BaseFeeChangeDenominator uint64 `json:"baseFeeChangeDenominator,omitempty"`
+	// MinimumBaseFeeWei is the minimum base fee in wei.
+	MinimumBaseFeeWei uint64 `json:"minimumBaseFeeWei,omitempty"`
+}
+
+// String implements the stringer interface.
+func (c Prague1Config) String() string {
+	banner := "prague1"
+	if c.Time != nil {
+		banner += fmt.Sprintf(
+			"(time: %v, baseFeeChangeDenominator: %v, minimumBaseFeeWei: %v)",
+			*c.Time, c.BaseFeeChangeDenominator, c.MinimumBaseFeeWei,
 		)
 	}
-	return "berachain"
+	return banner
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.
