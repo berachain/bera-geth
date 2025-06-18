@@ -62,7 +62,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-        ln -s /usr/include/asm-generic /usr/include/asm
+        sudo ln -s /usr/include/asm-generic /usr/include/asm
 
     - name: Build (arm64)
       run: |
