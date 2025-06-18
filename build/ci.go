@@ -656,7 +656,7 @@ func maybeSkipArchive(env build.Environment) {
 	}
 }
 
-// Builds the docker images and optionally uploads them to Docker Hub.
+// Builds the docker images and optionally uploads them to GHCR.
 func doDockerBuildx(cmdline []string) {
 	var (
 		platform = flag.String("platform", "", `Push a multi-arch docker image for the specified architectures (usually "linux/amd64,linux/arm64")`)
@@ -670,11 +670,11 @@ func doDockerBuildx(cmdline []string) {
 	maybeSkipArchive(env)
 
 	// Retrieve the upload credentials and authenticate
-	user := os.Getenv("DOCKER_HUB_USERNAME")
-	pass := []byte(os.Getenv("DOCKER_HUB_PASSWORD"))
+	user := getenvBase64("DOCKER_HUB_USERNAME")
+	pass := getenvBase64("DOCKER_HUB_PASSWORD")
 
 	if len(user) > 0 && len(pass) > 0 {
-		auther := exec.Command("docker", "login", "ghcr.io", "-u", user, "--password-stdin")
+		auther := exec.Command("docker", "login", "-u", string(user), "--password-stdin")
 		auther.Stdin = bytes.NewReader(pass)
 		build.MustRun(auther)
 	}
