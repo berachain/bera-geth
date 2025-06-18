@@ -31,6 +31,8 @@ jobs:
     - name: Create archive (amd64)
       run: |
         go run build/ci.go archive -arch amd64 -type tar -signer LINUX_SIGNING_KEY
+      env:
+        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
     - name: Upload artifacts (amd64)
       uses: actions/upload-artifact@v4
       with:
@@ -46,6 +48,8 @@ jobs:
     - name: Create archive (386)
       run: |
         go run build/ci.go archive -arch 386 -type tar -signer LINUX_SIGNING_KEY
+      env:
+        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
     - name: Upload artifacts (386)
       uses: actions/upload-artifact@v4
       with:
@@ -181,4 +185,4 @@ jobs:
 
     - name: Build and push multi-arch images to GHCR
       run: |
-        go run build/ci.go dockerx -platform linux/amd64,linux/arm64,linux/riscv64 -hub ghcr.io/berachain/bera-geth -upload
+        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload

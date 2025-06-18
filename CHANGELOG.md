@@ -17,5 +17,4 @@ and this project adheres to
 ### Changed
 
 - Updated release GH workflow to publish tarballs and push built images to GHCR.
-- Removed support for travis-ci and appveyor ci.
-- Moved circleci config to .circleci/config.yml.
+- Removed support for travis and appveyor builds and circleci.
