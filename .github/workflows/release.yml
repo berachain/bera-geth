@@ -21,8 +21,8 @@ jobs:
 
     - name: Install cross toolchain
       run: |
-        apt-get update
-        apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
+        sudo apt-get update
+        sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-multilib
 
     - name: Build (amd64)
       run: |
@@ -60,8 +60,8 @@ jobs:
 
     - name: Install cross toolchain
       run: |
-        apt-get update
-        apt-get -yq --no-install-suggests --no-install-recommends install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+        sudo apt-get update
+        sudo apt-get -yq --no-install-suggests --no-install-recommends install gcc-arm-linux-gnueabi libc6-dev-armel-cross gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
         ln -s /usr/include/asm-generic /usr/include/asm
 
     - name: Build (arm64)
@@ -144,7 +144,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.GH_TOKEN }}
 
     - name: Build and push multi-arch image to GHCR
       run: |
