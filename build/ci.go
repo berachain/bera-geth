@@ -644,13 +644,13 @@ func archiveUpload(archive string, blobstore string, signer string, signifyVar s
 	return nil
 }
 
-// skips archiving for some build configurations. // TODO: revert changes for testing.
+// skips archiving for some build configurations.
 func maybeSkipArchive(env build.Environment) {
-	// if env.IsPullRequest {
-	// 	log.Printf("skipping archive creation because this is a PR build")
-	// 	os.Exit(0)
-	// }
-	if env.Branch != "master" && !strings.HasPrefix(env.Tag, "v1.") && env.Branch != "prepare-fork" {
+	if env.IsPullRequest {
+		log.Printf("skipping archive creation because this is a PR build")
+		os.Exit(0)
+	}
+	if env.Branch != "master" && !strings.HasPrefix(env.Tag, "v1.") {
 		log.Printf("skipping archive creation because branch %q, tag %q is not on the inclusion list", env.Branch, env.Tag)
 		os.Exit(0)
 	}
@@ -690,7 +690,7 @@ func doDockerBuildx(cmdline []string) {
 	var tags []string
 
 	switch {
-	case env.Branch == "master", env.Branch == "prepare-fork": // TODO: revert changes for testing.
+	case env.Branch == "master":
 		tags = []string{"latest"}
 	case strings.HasPrefix(env.Tag, "v1."):
 		tags = []string{"stable", fmt.Sprintf("release-%v", version.Family), "v" + version.Semantic}

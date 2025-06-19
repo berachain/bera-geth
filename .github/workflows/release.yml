@@ -1,10 +1,10 @@
 on:
-  push:
-    branches:
-      - "master"
-      - "prepare-fork" # testing, TODO: remove.
-    tags:
-      - "v*"
+  # TODO: fix release workflow and enable this.
+  # push:
+  #   branches:
+  #     - "master"
+  #   tags:
+  #     - "v*"
 
 jobs:
   linux-intel:
