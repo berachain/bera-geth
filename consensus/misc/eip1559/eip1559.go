@@ -57,8 +57,8 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header) *big.Int {
 	calculatedBaseFee := calcBaseFee(config, parent)
 
 	// Starting at the Prague1 fork, the base fee must be at least the minimum base fee.
-	if config.IsPrague1(parent.Time) {
-		minBaseFee := new(big.Int).SetUint64(config.Berachain.MinimumBaseFeeWei)
+	if config.IsPrague1(parent.Number, parent.Time) {
+		minBaseFee := new(big.Int).SetUint64(config.Berachain.Prague1.MinimumBaseFeeWei)
 		if calculatedBaseFee.Cmp(minBaseFee) < 0 {
 			calculatedBaseFee = minBaseFee
 		}
@@ -91,7 +91,7 @@ func calcBaseFee(config *params.ChainConfig, parent *types.Header) *big.Int {
 		num.SetUint64(parent.GasUsed - parentGasTarget)
 		num.Mul(num, parent.BaseFee)
 		num.Div(num, denom.SetUint64(parentGasTarget))
-		num.Div(num, denom.SetUint64(config.BaseFeeChangeDenominator(parent.Time)))
+		num.Div(num, denom.SetUint64(config.BaseFeeChangeDenominator(parent.Number, parent.Time)))
 		if num.Cmp(common.Big1) < 0 {
 			return num.Add(parent.BaseFee, common.Big1)
 		}
@@ -102,7 +102,7 @@ func calcBaseFee(config *params.ChainConfig, parent *types.Header) *big.Int {
 		num.SetUint64(parentGasTarget - parent.GasUsed)
 		num.Mul(num, parent.BaseFee)
 		num.Div(num, denom.SetUint64(parentGasTarget))
-		num.Div(num, denom.SetUint64(config.BaseFeeChangeDenominator(parent.Time)))
+		num.Div(num, denom.SetUint64(config.BaseFeeChangeDenominator(parent.Number, parent.Time)))
 
 		baseFee := num.Sub(parent.BaseFee, num)
 		if baseFee.Cmp(common.Big0) < 0 {

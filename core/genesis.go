@@ -653,29 +653,28 @@ func DefaultHoodiGenesisBlock() *Genesis {
 }
 
 // DefaultBerachainGenesisBlock returns the Berachain main net genesis block.
-// TODO: fix.
 func DefaultBerachainGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.BerachainChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("TODO: fix"),
-		GasLimit:   5000,
-		Difficulty: big.NewInt(17179869184),
-		Alloc:      decodePrealloc("TODO: get from mkalloc"),
+		Nonce:      0x1234,
+		ExtraData:  []byte{},
+		GasLimit:   0x1c9c380,
+		Difficulty: big.NewInt(0x01),
+		Timestamp:  1737381600,
+		Alloc:      decodePrealloc(berachainAllocData),
 	}
 }
 
-// DefaultSepoliaGenesisBlock returns the Bepolia network genesis block.
-// TODO: fix.
+// DefaultBepoliaGenesisBlock returns the Bepolia network genesis block.
 func DefaultBepoliaGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.BepoliaChainConfig,
-		Nonce:      0,
-		ExtraData:  []byte("TODO: fix"),
+		Nonce:      0x1234,
+		ExtraData:  []byte{},
 		GasLimit:   0x1c9c380,
-		Difficulty: big.NewInt(0x20000),
-		Timestamp:  1633267481,
-		Alloc:      decodePrealloc("TODO: get from mkalloc"),
+		Difficulty: big.NewInt(0x01),
+		Timestamp:  1739976735,
+		Alloc:      decodePrealloc(bepoliaAllocData),
 	}
 }
 
