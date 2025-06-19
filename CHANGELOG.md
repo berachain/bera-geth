@@ -17,4 +17,4 @@ and this project adheres to
 ### Changed
 
 - [WIP] Updated release GH workflow to publish tarballs and push built images to GHCR.
-- Removed support for travis and appveyor builds and circleci.
+- Removed support for appveyor, gitea, travis, circleci.
