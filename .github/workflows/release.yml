@@ -7,6 +7,8 @@ on:
       - "v1.*"
 
 jobs:
+  # Note: Go 1.24 doesn't exist, but the -dlgo flag in build commands
+  # downloads the correct Go version automatically from checksums.txt
   linux-intel:
     name: Linux Build (amd)
     runs-on: ubuntu-latest
@@ -30,9 +32,7 @@ jobs:
 
     - name: Create archive (amd64)
       run: |
-        go run build/ci.go archive -arch amd64 -type tar -signer LINUX_SIGNING_KEY
-      env:
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+        go run build/ci.go archive -arch amd64 -type tar
     - name: Upload artifacts (amd64)
       uses: actions/upload-artifact@v4
       with:
@@ -47,9 +47,7 @@ jobs:
 
     - name: Create archive (386)
       run: |
-        go run build/ci.go archive -arch 386 -type tar -signer LINUX_SIGNING_KEY
-      env:
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+        go run build/ci.go archive -arch 386 -type tar
     - name: Upload artifacts (386)
       uses: actions/upload-artifact@v4
       with:
@@ -82,9 +80,7 @@ jobs:
 
     - name: Create archive (arm64)
       run: |
-        go run build/ci.go archive -arch arm64 -type tar -signer LINUX_SIGNING_KEY
-      env:
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+        go run build/ci.go archive -arch arm64 -type tar
     - name: Upload artifacts (arm64)
       uses: actions/upload-artifact@v4
       with:
@@ -101,10 +97,9 @@ jobs:
 
     - name: Create archive (arm5)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
+        go run build/ci.go archive -arch arm -type tar
       env:
         GOARM: "5"
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
     - name: Upload artifacts (arm5)
       uses: actions/upload-artifact@v4
       with:
@@ -121,10 +116,9 @@ jobs:
 
     - name: Create archive (arm6)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
+        go run build/ci.go archive -arch arm -type tar
       env:
         GOARM: "6"
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
     - name: Upload artifacts (arm6)
       uses: actions/upload-artifact@v4
       with:
@@ -141,10 +135,9 @@ jobs:
 
     - name: Create archive (arm7)
       run: |
-        go run build/ci.go archive -arch arm -type tar -signer LINUX_SIGNING_KEY
+        go run build/ci.go archive -arch arm -type tar
       env:
         GOARM: "7"
-        LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
     - name: Upload artifacts (arm7)
       uses: actions/upload-artifact@v4
       with:
@@ -186,3 +179,33 @@ jobs:
     - name: Build and push multi-arch images to GHCR
       run: |
         go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
+
+  release:
+    name: Create Release
+    needs: [linux-intel, linux-arm]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+    
+    - name: Create Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Move all artifacts to current directory
+        find ./artifacts -name "*.tar.gz*" -exec mv {} . \;
+        
+        # Create release
+        tag_name="${GITHUB_REF#refs/tags/}"
+        gh release create "$tag_name" \
+          --title "Geth $tag_name" \
+          --generate-notes \
+          --draft \
+          *.tar.gz*
