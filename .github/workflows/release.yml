@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main" 
+      - "fix-ci-3" # TODO: remove this
     tags:
       - "v1.*"
 
@@ -14,7 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract version
-        run: echo "VERSION=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "VERSION=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
+          else
+            # For branch builds, use a test version
+            echo "VERSION=v1.test-branch" >> $GITHUB_OUTPUT
+          fi
         id: extract_version
     outputs:
       VERSION: ${{ steps.extract_version.outputs.VERSION }}
@@ -46,10 +53,10 @@ jobs:
     - name: Upload artifacts (amd64)
       uses: actions/upload-artifact@v4
       with:
-        name: geth-linux-amd64-archives
+        name: bera-geth-linux-amd64-archives
         path: |
-          geth-linux-amd64-*.tar.gz
-          geth-alltools-linux-amd64-*.tar.gz
+          bera-geth-linux-amd64-*.tar.gz
+          bera-geth-alltools-linux-amd64-*.tar.gz
     - name: Cleanup bin
       run: rm -f build/bin/*
 
@@ -81,10 +88,10 @@ jobs:
     - name: Upload artifacts (arm64)
       uses: actions/upload-artifact@v4
       with:
-        name: linux-arm64-archives
+        name: bera-geth-linux-arm64-archives
         path: |
-          geth-linux-arm64-*.tar.gz
-          geth-alltools-linux-arm64-*.tar.gz
+          bera-geth-linux-arm64-*.tar.gz
+          bera-geth-alltools-linux-arm64-*.tar.gz
     - name: Cleanup bin
       run: rm -fr build/bin/*
 
@@ -126,7 +133,8 @@ jobs:
     name: Draft Release
     needs: [extract-version, linux-intel, linux-arm]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    # TODO: Re-enable this condition after testing
+    # if: startsWith(github.ref, 'refs/tags/')
     env:
       VERSION: ${{ needs.extract-version.outputs.VERSION }}
     permissions:
@@ -152,24 +160,32 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Debug: Show what was downloaded
+        echo "Contents of artifacts directory:"
+        ls -la ./artifacts/ || echo "Artifacts directory not found"
+        
         # Move all artifacts to current directory
-        find ./artifacts -name "*.tar.gz" -exec mv {} . \;
+        if [ -d "./artifacts" ]; then
+          find ./artifacts -name "*.tar.gz" -exec mv {} . \;
+        else
+          echo "Warning: No artifacts directory found"
+        fi
         
         # List available files for debugging
         echo "Available files:"
         ls -la *.tar.gz || echo "No tar.gz files found"
         
         # Get actual archive names
-        GETH_AMD64=$(ls geth-linux-amd64-*.tar.gz | grep -v alltools | head -1)
-        GETH_ARM64=$(ls geth-linux-arm64-*.tar.gz | grep -v alltools | head -1)
-        GETH_ALLTOOLS_AMD64=$(ls geth-alltools-linux-amd64-*.tar.gz | head -1)
-        GETH_ALLTOOLS_ARM64=$(ls geth-alltools-linux-arm64-*.tar.gz | head -1)
+        GETH_AMD64=$(ls bera-geth-linux-amd64-*.tar.gz 2>/dev/null | grep -v alltools | head -1)
+        GETH_ARM64=$(ls bera-geth-linux-arm64-*.tar.gz 2>/dev/null | grep -v alltools | head -1)
+        GETH_ALLTOOLS_AMD64=$(ls bera-geth-alltools-linux-amd64-*.tar.gz 2>/dev/null | head -1)
+        GETH_ALLTOOLS_ARM64=$(ls bera-geth-alltools-linux-arm64-*.tar.gz 2>/dev/null | head -1)
         
         echo "Found archives:"
-        echo "  AMD64: $GETH_AMD64"
-        echo "  ARM64: $GETH_ARM64"
-        echo "  Alltools AMD64: $GETH_ALLTOOLS_AMD64"
-        echo "  Alltools ARM64: $GETH_ALLTOOLS_ARM64"
+        echo "  AMD64: ${GETH_AMD64:-NOT FOUND}"
+        echo "  ARM64: ${GETH_ARM64:-NOT FOUND}"
+        echo "  Alltools AMD64: ${GETH_ALLTOOLS_AMD64:-NOT FOUND}"
+        echo "  Alltools ARM64: ${GETH_ALLTOOLS_ARM64:-NOT FOUND}"
         
         body=$(cat <<- 'ENDBODY'
         ![bera-geth](https://raw.githubusercontent.com/berachain/bera-geth/main/.github/meta/bera-geth.png)
@@ -231,7 +247,7 @@ jobs:
         
         # Create assets array for gh release
         assets=()
-        for asset in geth-*.tar.gz; do
+        for asset in bera-geth-*.tar.gz; do
             if [ -f "$asset" ]; then
                 assets+=("$asset")
             fi
