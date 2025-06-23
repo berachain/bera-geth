@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "main" 
-      - "fix-ci" # TODO: remove fix-ci after testing.
     tags:
       - "v1.*"
 
@@ -191,7 +190,7 @@ jobs:
       run: |
         go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
 
-  release:
+  draft-release:
     name: Draft Release
     needs: [extract-version, linux-intel, linux-arm]
     runs-on: ubuntu-latest
