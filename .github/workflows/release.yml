@@ -1,7 +1,8 @@
 on:
   push:
     branches:
-      - "main", "fix-ci" # TODO: remove fix-ci after testing.
+      - "main" 
+      - "fix-ci" # TODO: remove fix-ci after testing.
     tags:
       - "v1.*"
 
