@@ -32,7 +32,8 @@ jobs:
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
-  build:
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
