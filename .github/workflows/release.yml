@@ -133,8 +133,6 @@ jobs:
     name: Draft Release
     needs: [extract-version, linux-intel, linux-arm]
     runs-on: ubuntu-latest
-    # TODO: Re-enable this condition after testing
-    # if: startsWith(github.ref, 'refs/tags/')
     env:
       VERSION: ${{ needs.extract-version.outputs.VERSION }}
     permissions:
@@ -187,6 +185,19 @@ jobs:
         echo "  Alltools AMD64: ${GETH_ALLTOOLS_AMD64:-NOT FOUND}"
         echo "  Alltools ARM64: ${GETH_ALLTOOLS_ARM64:-NOT FOUND}"
         
+        # Determine the release tag
+        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          # For tags, use the actual tag
+          RELEASE_TAG="${{ env.VERSION }}"
+          IS_PRERELEASE=""
+        else
+          # For branches, create a specific tag based on commit
+          RELEASE_TAG="test-${GITHUB_SHA::8}"
+          IS_PRERELEASE="--prerelease"
+        fi
+        
+        echo "Release tag: $RELEASE_TAG"
+        
         body=$(cat <<- 'ENDBODY'
         ![bera-geth](https://raw.githubusercontent.com/berachain/bera-geth/main/.github/meta/bera-geth.png)
 
@@ -215,10 +226,10 @@ jobs:
 
         | System | Architecture | Binary | Notes |
         |:---:|:---:|:---:|:---|
-        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | amd64 | [GETH_AMD64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/GETH_AMD64_PLACEHOLDER) | Most Linux systems |
-        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | arm64 | [GETH_ARM64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/GETH_ARM64_PLACEHOLDER) | 64-bit ARM systems |
-        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | - | [GETH_ALLTOOLS_AMD64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/GETH_ALLTOOLS_AMD64_PLACEHOLDER) | All tools bundle (amd64) |
-        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | - | [GETH_ALLTOOLS_ARM64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/GETH_ALLTOOLS_ARM64_PLACEHOLDER) | All tools bundle (arm64) |
+        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | amd64 | [GETH_AMD64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/RELEASE_TAG_PLACEHOLDER/GETH_AMD64_PLACEHOLDER) | Most Linux systems |
+        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | arm64 | [GETH_ARM64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/RELEASE_TAG_PLACEHOLDER/GETH_ARM64_PLACEHOLDER) | 64-bit ARM systems |
+        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | amd64 | [GETH_ALLTOOLS_AMD64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/RELEASE_TAG_PLACEHOLDER/GETH_ALLTOOLS_AMD64_PLACEHOLDER) | All tools bundle (amd64) |
+        | <img src="https://simpleicons.org/icons/linux.svg" style="width: 32px;"/> | arm64 | [GETH_ALLTOOLS_ARM64_PLACEHOLDER](https://github.com/${{ github.repository }}/releases/download/RELEASE_TAG_PLACEHOLDER/GETH_ALLTOOLS_ARM64_PLACEHOLDER) | All tools bundle (arm64) |
         | **System** | **Option** | - | **Resource** |
         | <img src="https://simpleicons.org/icons/docker.svg" style="width: 32px;"/> | Docker | | [ghcr.io/berachain/bera-geth](https://ghcr.io/berachain/bera-geth) |
         
@@ -239,11 +250,12 @@ jobs:
         ENDBODY
         )
         
-        # Replace placeholders with actual filenames
+        # Replace placeholders with actual filenames and release tag
         body="${body//GETH_AMD64_PLACEHOLDER/$GETH_AMD64}"
         body="${body//GETH_ARM64_PLACEHOLDER/$GETH_ARM64}"
         body="${body//GETH_ALLTOOLS_AMD64_PLACEHOLDER/$GETH_ALLTOOLS_AMD64}"
         body="${body//GETH_ALLTOOLS_ARM64_PLACEHOLDER/$GETH_ALLTOOLS_ARM64}"
+        body="${body//RELEASE_TAG_PLACEHOLDER/$RELEASE_TAG}"
         
         # Create assets array for gh release
         assets=()
@@ -253,5 +265,5 @@ jobs:
             fi
         done
         
-        tag_name="${{ env.VERSION }}"
-        echo "$body" | gh release create --draft -t "Bera Geth $tag_name" -F "-" "$tag_name" "${assets[@]}"
+        # Create the release with the determined tag
+        echo "$body" | gh release create $IS_PRERELEASE --draft -t "Bera Geth $RELEASE_TAG" -F "-" "$RELEASE_TAG" "${assets[@]}"
