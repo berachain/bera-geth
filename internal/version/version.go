@@ -28,9 +28,6 @@ import (
 
 const ourPath = "github.com/ethereum/go-ethereum" // Path to our module
 
-// Family holds the textual version string for major.minor
-var Family = fmt.Sprintf("%d.%d", version.Major, version.Minor)
-
 // Semantic holds the textual version string for major.minor.patch.
 var Semantic = fmt.Sprintf("%d.%d.%d", version.Major, version.Minor, version.Patch)
 
