@@ -586,9 +586,12 @@ func (b testBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) even
 func (b testBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
 	panic("implement me")
 }
-func (b testBackend) GetTransaction(txHash common.Hash) (bool, *types.Transaction, common.Hash, uint64, uint64) {
-	tx, blockHash, blockNumber, index := rawdb.ReadTransaction(b.db, txHash)
-	return true, tx, blockHash, blockNumber, index
+func (b testBackend) GetCanonicalTransaction(txHash common.Hash) (bool, *types.Transaction, common.Hash, uint64, uint64) {
+	tx, blockHash, blockNumber, index := rawdb.ReadCanonicalTransaction(b.db, txHash)
+	return tx != nil, tx, blockHash, blockNumber, index
+}
+func (b testBackend) GetCanonicalReceipt(tx *types.Transaction, blockHash common.Hash, blockNumber, blockIndex uint64) (*types.Receipt, error) {
+	return b.chain.GetCanonicalReceipt(tx, blockHash, blockNumber, blockIndex)
 }
 func (b testBackend) TxIndexDone() bool {
 	return true
@@ -1213,6 +1216,15 @@ func TestCall(t *testing.T) {
 				Withdrawals: &types.Withdrawals{},
 			},
 			expectErr: errors.New(`block override "withdrawals" is not supported for this RPC method`),
+		},
+		{
+			name:        "unsupported block override proposerPubkey",
+			blockNumber: rpc.LatestBlockNumber,
+			call:        TransactionArgs{},
+			blockOverrides: override.BlockOverrides{
+				ProposerPubkey: &common.Pubkey{},
+			},
+			expectErr: errors.New(`block override "proposerPubkey" is not supported for this RPC method`),
 		},
 	}
 	for _, tc := range testSuite {
@@ -2755,12 +2767,8 @@ func TestFillBlobTransaction(t *testing.T) {
 				Proofs:      []kzg4844.Proof{emptyBlobProof},
 			},
 			want: &result{
-				Hashes: []common.Hash{emptyBlobHash},
-				Sidecar: &types.BlobTxSidecar{
-					Blobs:       emptyBlobs,
-					Commitments: []kzg4844.Commitment{emptyBlobCommit},
-					Proofs:      []kzg4844.Proof{emptyBlobProof},
-				},
+				Hashes:  []common.Hash{emptyBlobHash},
+				Sidecar: types.NewBlobTxSidecar(types.BlobSidecarVersion0, emptyBlobs, []kzg4844.Commitment{emptyBlobCommit}, []kzg4844.Proof{emptyBlobProof}),
 			},
 		},
 		{
@@ -2775,12 +2783,8 @@ func TestFillBlobTransaction(t *testing.T) {
 				Proofs:      []kzg4844.Proof{emptyBlobProof},
 			},
 			want: &result{
-				Hashes: []common.Hash{emptyBlobHash},
-				Sidecar: &types.BlobTxSidecar{
-					Blobs:       emptyBlobs,
-					Commitments: []kzg4844.Commitment{emptyBlobCommit},
-					Proofs:      []kzg4844.Proof{emptyBlobProof},
-				},
+				Hashes:  []common.Hash{emptyBlobHash},
+				Sidecar: types.NewBlobTxSidecar(types.BlobSidecarVersion0, emptyBlobs, []kzg4844.Commitment{emptyBlobCommit}, []kzg4844.Proof{emptyBlobProof}),
 			},
 		},
 		{
@@ -2805,12 +2809,8 @@ func TestFillBlobTransaction(t *testing.T) {
 				Blobs: emptyBlobs,
 			},
 			want: &result{
-				Hashes: []common.Hash{emptyBlobHash},
-				Sidecar: &types.BlobTxSidecar{
-					Blobs:       emptyBlobs,
-					Commitments: []kzg4844.Commitment{emptyBlobCommit},
-					Proofs:      []kzg4844.Proof{emptyBlobProof},
-				},
+				Hashes:  []common.Hash{emptyBlobHash},
+				Sidecar: types.NewBlobTxSidecar(types.BlobSidecarVersion0, emptyBlobs, []kzg4844.Commitment{emptyBlobCommit}, []kzg4844.Proof{emptyBlobProof}),
 			},
 		},
 	}

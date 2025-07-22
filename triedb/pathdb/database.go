@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -120,6 +121,7 @@ type Config struct {
 	StateCleanSize      int    // Maximum memory allowance (in bytes) for caching clean state data
 	WriteBufferSize     int    // Maximum memory allowance (in bytes) for write buffer
 	ReadOnly            bool   // Flag whether the database is opened in read only mode
+	JournalDirectory    string // Absolute path of journal directory (null means the journal data is persisted in key-value store)
 
 	// Testing configurations
 	SnapshotNoBuild   bool // Flag Whether the state generation is allowed
@@ -155,6 +157,9 @@ func (c *Config) fields() []interface{} {
 		list = append(list, "history", "entire chain")
 	} else {
 		list = append(list, "history", fmt.Sprintf("last %d blocks", c.StateHistory))
+	}
+	if c.JournalDirectory != "" {
+		list = append(list, "journal-dir", c.JournalDirectory)
 	}
 	return list
 }
@@ -493,7 +498,6 @@ func (db *Database) Enable(root common.Hash) error {
 	// Drop the stale state journal in persistent database and
 	// reset the persistent state id back to zero.
 	batch := db.diskdb.NewBatch()
-	rawdb.DeleteTrieJournal(batch)
 	rawdb.DeleteSnapshotRoot(batch)
 	rawdb.WritePersistentStateID(batch, 0)
 	if err := batch.Write(); err != nil {
@@ -520,6 +524,16 @@ func (db *Database) Enable(root common.Hash) error {
 	// Re-construct a new disk layer backed by persistent state
 	// and schedule the state snapshot generation if it's permitted.
 	db.tree.init(generateSnapshot(db, root, db.isVerkle || db.config.SnapshotNoBuild))
+
+	// After snap sync, the state of the database may have changed completely.
+	// To ensure the history indexer always matches the current state, we must:
+	//   1. Close any existing indexer
+	//   2. Re-initialize the indexer so it starts indexing from the new state root.
+	if db.indexer != nil && db.freezer != nil && db.config.EnableStateIndexing {
+		db.indexer.close()
+		db.indexer = newHistoryIndexer(db.diskdb, db.freezer, db.tree.bottom().stateID())
+		log.Info("Re-enabled state history indexing")
+	}
 	log.Info("Rebuilt trie database", "root", root)
 	return nil
 }
@@ -563,8 +577,6 @@ func (db *Database) Recover(root common.Hash) error {
 		// disk layer won't be accessible from outside.
 		db.tree.init(dl)
 	}
-	rawdb.DeleteTrieJournal(db.diskdb)
-
 	// Explicitly sync the key-value store to ensure all recent writes are
 	// flushed to disk. This step is crucial to prevent a scenario where
 	// recent key-value writes are lost due to an application panic, while
@@ -670,6 +682,20 @@ func (db *Database) modifyAllowed() error {
 	return nil
 }
 
+// journalPath returns the absolute path of journal for persisting state data.
+func (db *Database) journalPath() string {
+	if db.config.JournalDirectory == "" {
+		return ""
+	}
+	var fname string
+	if db.isVerkle {
+		fname = fmt.Sprintf("verkle.journal")
+	} else {
+		fname = fmt.Sprintf("merkle.journal")
+	}
+	return filepath.Join(db.config.JournalDirectory, fname)
+}
+
 // AccountHistory inspects the account history within the specified range.
 //
 // Start: State ID of the first history object for the query. 0 implies the first
@@ -698,6 +724,15 @@ func (db *Database) StorageHistory(address common.Address, slot common.Hash, sta
 // state history in the local store.
 func (db *Database) HistoryRange() (uint64, uint64, error) {
 	return historyRange(db.freezer)
+}
+
+// IndexProgress returns the indexing progress made so far. It provides the
+// number of states that remain unindexed.
+func (db *Database) IndexProgress() (uint64, error) {
+	if db.indexer == nil {
+		return 0, nil
+	}
+	return db.indexer.progress()
 }
 
 // AccountIterator creates a new account iterator for the specified root hash and

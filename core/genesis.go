@@ -262,7 +262,7 @@ func (e *GenesisMismatchError) Error() string {
 
 // ChainOverrides contains the changes to chain config.
 type ChainOverrides struct {
-	OverridePrague *uint64
+	OverrideOsaka  *uint64
 	OverrideVerkle *uint64
 }
 
@@ -271,8 +271,8 @@ func (o *ChainOverrides) apply(cfg *params.ChainConfig) error {
 	if o == nil || cfg == nil {
 		return nil
 	}
-	if o.OverridePrague != nil {
-		cfg.PragueTime = o.OverridePrague
+	if o.OverrideOsaka != nil {
+		cfg.OsakaTime = o.OverrideOsaka
 	}
 	if o.OverrideVerkle != nil {
 		cfg.VerkleTime = o.OverrideVerkle
@@ -525,6 +525,12 @@ func (g *Genesis) toBlockWithRoot(root common.Hash) *types.Block {
 		}
 		if conf.IsPrague(num, g.Timestamp) {
 			head.RequestsHash = &types.EmptyRequestsHash
+		}
+		if conf.IsPrague1(num, g.Timestamp) {
+			// BRIP-0004: The parentProposerPubkey of the genesis block is always
+			// the zero pubkey. This is because the genesis block does not have a parent
+			// by definition.
+			head.ParentProposerPubkey = new(common.Pubkey)
 		}
 	}
 	return types.NewBlock(head, &types.Body{Withdrawals: withdrawals}, nil, trie.NewStackTrie(nil))

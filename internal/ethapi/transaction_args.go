@@ -414,7 +414,7 @@ func (args *TransactionArgs) CallDefaults(globalGasCap uint64, baseFee *big.Int,
 // core evm. This method is used in calls and traces that do not require a real
 // live transaction.
 // Assumes that fields are not nil, i.e. setDefaults or CallDefaults has been called.
-func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck, skipEoACheck bool) *core.Message {
+func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck, skipEoACheck, isPrague1 bool, distributorAddress common.Address) *core.Message {
 	var (
 		gasPrice  *big.Int
 		gasFeeCap *big.Int
@@ -463,14 +463,17 @@ func (args *TransactionArgs) ToMessage(baseFee *big.Int, skipNonceCheck, skipEoA
 		SetCodeAuthorizations: args.AuthorizationList,
 		SkipNonceChecks:       skipNonceCheck,
 		SkipFromEOACheck:      skipEoACheck,
+		IsPoLTx:               isPrague1 && types.IsPoLDistribution(args.To, args.data(), distributorAddress),
 	}
 }
 
 // ToTransaction converts the arguments to a transaction.
 // This assumes that setDefaults has been called.
-func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
+func (args *TransactionArgs) ToTransaction(defaultType int, isPrague1 bool, distributorAddress common.Address) *types.Transaction {
 	usedType := types.LegacyTxType
 	switch {
+	case isPrague1 && types.IsPoLDistribution(args.To, args.data(), distributorAddress):
+		usedType = types.PoLTxType
 	case args.AuthorizationList != nil || defaultType == types.SetCodeTxType:
 		usedType = types.SetCodeTxType
 	case args.BlobHashes != nil || defaultType == types.BlobTxType:
@@ -486,6 +489,20 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 	}
 	var data types.TxData
 	switch usedType {
+	case types.PoLTxType:
+		gasPrice := (*big.Int)(args.GasPrice)
+		if args.MaxFeePerGas != nil || defaultType == types.DynamicFeeTxType {
+			gasPrice = (*big.Int)(args.MaxFeePerGas)
+		}
+		data = &types.PoLTx{
+			ChainID:  (*big.Int)(args.ChainID),
+			From:     args.from(),
+			To:       *args.To,
+			Nonce:    uint64(*args.Nonce),
+			GasLimit: uint64(*args.Gas),
+			GasPrice: gasPrice,
+			Data:     args.data(),
+		}
 	case types.SetCodeTxType:
 		al := types.AccessList{}
 		if args.AccessList != nil {
@@ -527,11 +544,8 @@ func (args *TransactionArgs) ToTransaction(defaultType int) *types.Transaction {
 			BlobFeeCap: uint256.MustFromBig((*big.Int)(args.BlobFeeCap)),
 		}
 		if args.Blobs != nil {
-			data.(*types.BlobTx).Sidecar = &types.BlobTxSidecar{
-				Blobs:       args.Blobs,
-				Commitments: args.Commitments,
-				Proofs:      args.Proofs,
-			}
+			// TODO(rjl493456442, marius) support V1
+			data.(*types.BlobTx).Sidecar = types.NewBlobTxSidecar(types.BlobSidecarVersion0, args.Blobs, args.Commitments, args.Proofs)
 		}
 
 	case types.DynamicFeeTxType:
