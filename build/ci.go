@@ -57,7 +57,6 @@ import (
 	"time"
 
 	"github.com/cespare/cp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/crypto/signify"
 	"github.com/ethereum/go-ethereum/internal/build"
 	"github.com/ethereum/go-ethereum/internal/download"
@@ -188,8 +187,6 @@ func doInstall(cmdline []string) {
 	)
 	flag.CommandLine.Parse(cmdline)
 	env := build.Env()
-
-	fmt.Println("env", spew.Sdump(env))
 
 	// Configure the toolchain.
 	tc := build.GoToolchain{GOARCH: *arch, CC: *cc}
