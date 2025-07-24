@@ -8,21 +8,26 @@ GOBIN = ./build/bin
 GO ?= latest
 GORUN = go run
 
+COMMIT = $(shell git log -1 --format='%H')
+BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+TAG := $(shell git describe --tags --always --match "v*")
+BUILD_FLAGS := -git-commit=$(COMMIT) -git-branch=$(BRANCH) -git-tag=$(TAG)
+
 #? geth: Build geth.
 geth:
-	$(GORUN) build/ci.go install ./cmd/geth
+	$(GORUN) build/ci.go install ./cmd/geth $(BUILD_FLAGS)
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/geth\" to launch geth."
 
 #? evm: Build evm.
 evm:
-	$(GORUN) build/ci.go install ./cmd/evm
+	$(GORUN) build/ci.go install ./cmd/evm $(BUILD_FLAGS)
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/evm\" to launch evm."
 
 #? all: Build all packages and executables.
 all:
-	$(GORUN) build/ci.go install
+	$(GORUN) build/ci.go install $(BUILD_FLAGS)
 
 #? test: Run the tests.
 test: all

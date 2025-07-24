@@ -358,8 +358,12 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
 		// create default extradata in ASCII format similar to reth
-		// Format: "bera-geth/vX.Y.Z[-meta]/platform"
-		versionStr := fmt.Sprintf("bera-geth/v%s/%s", version.WithMeta, runtime.GOOS)
+		// Format: "bera-geth/vX.Y.Z/platform"
+		tag := version.WithMeta
+		if vcs, ok := version.VCS(); ok && vcs.Tag != "" {
+			tag = vcs.Tag
+		}
+		versionStr := fmt.Sprintf("bera-geth/v%s/%s", tag, runtime.GOOS)
 		extra = []byte(versionStr)
 	}
 	if uint64(len(extra)) > params.MaximumExtraDataSize {

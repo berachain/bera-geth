@@ -57,6 +57,7 @@ import (
 	"time"
 
 	"github.com/cespare/cp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/crypto/signify"
 	"github.com/ethereum/go-ethereum/internal/build"
 	"github.com/ethereum/go-ethereum/internal/download"
@@ -188,6 +189,8 @@ func doInstall(cmdline []string) {
 	flag.CommandLine.Parse(cmdline)
 	env := build.Env()
 
+	fmt.Println("env", spew.Sdump(env))
+
 	// Configure the toolchain.
 	tc := build.GoToolchain{GOARCH: *arch, CC: *cc}
 	if *dlgo {
@@ -237,6 +240,7 @@ func buildFlags(env build.Environment, staticLinking bool, buildTags []string) (
 	if env.Commit != "" {
 		ld = append(ld, "-X", "github.com/ethereum/go-ethereum/internal/version.gitCommit="+env.Commit)
 		ld = append(ld, "-X", "github.com/ethereum/go-ethereum/internal/version.gitDate="+env.Date)
+		ld = append(ld, "-X", "github.com/ethereum/go-ethereum/internal/version.gitTag="+env.Tag)
 	}
 	// Strip DWARF on darwin. This used to be required for certain things,
 	// and there is no downside to this, so we just keep doing it.
