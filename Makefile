@@ -15,19 +15,19 @@ BUILD_FLAGS := -git-commit=$(COMMIT) -git-branch=$(BRANCH) -git-tag=$(TAG)
 
 #? geth: Build geth.
 geth:
-	$(GORUN) build/ci.go install ./cmd/geth $(BUILD_FLAGS)
+	$(GORUN) build/ci.go install ./cmd/geth
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/geth\" to launch geth."
 
 #? evm: Build evm.
 evm:
-	$(GORUN) build/ci.go install ./cmd/evm $(BUILD_FLAGS)
+	$(GORUN) build/ci.go install ./cmd/evm
 	@echo "Done building."
 	@echo "Run \"$(GOBIN)/evm\" to launch evm."
 
 #? all: Build all packages and executables.
 all:
-	$(GORUN) build/ci.go install $(BUILD_FLAGS)
+	$(GORUN) build/ci.go install
 
 #? test: Run the tests.
 test: all
