@@ -37,26 +37,6 @@ jobs:
         cache: false
 
     # Test build without pushing - this will catch any build errors
-    - name: Test Docker build (linux/amd64)
+    - name: Test Docker build using dockerx (no upload)
       run: |
-        docker buildx build \
-          --platform linux/amd64 \
-          --tag ghcr.io/berachain/bera-geth:test-${{ github.sha }} \
-          --file Dockerfile \
-          .
-    
-    - name: Test Docker build (linux/arm64)
-      run: |
-        docker buildx build \
-          --platform linux/arm64 \
-          --tag ghcr.io/berachain/bera-geth:test-${{ github.sha }} \
-          --file Dockerfile \
-          .
-
-    - name: Test Dockerfile.alltools build
-      run: |
-        docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --tag ghcr.io/berachain/bera-geth:alltools-test-${{ github.sha }} \
-          --file Dockerfile.alltools \
-          . 
+        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth 
