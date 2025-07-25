@@ -647,10 +647,10 @@ func archiveUpload(archive string, blobstore string, signer string, signifyVar s
 
 // skips archiving for some build configurations.
 func maybeSkipArchive(env build.Environment) {
-	if env.IsPullRequest {
-		log.Printf("skipping archive creation because this is a PR build")
-		os.Exit(0)
-	}
+	// if env.IsPullRequest {
+	// 	log.Printf("skipping archive creation because this is a PR build")
+	// 	os.Exit(0)
+	// }
 	// if env.Branch != "main" && !strings.HasPrefix(env.Tag, "v1.") {
 	// 	log.Printf("skipping archive creation because branch %q, tag %q is not on the inclusion list", env.Branch, env.Tag)
 	// 	os.Exit(0)
