@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v1.*"
+    branches:
+      - "fix-signed-release"
 
 jobs:
   extract-version:
