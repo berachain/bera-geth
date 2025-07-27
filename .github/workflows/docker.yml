@@ -6,7 +6,6 @@ on:
       - "v1.*"
     branches:
       - "main"
-      - "fix-signed-release"
 
 jobs:
   docker:
