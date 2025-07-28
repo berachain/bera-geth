@@ -339,7 +339,7 @@ func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*
 		snap = env.state.Snapshot()
 		gp   = env.gasPool.Gas()
 	)
-	
+
 	// Berachain: PoL tx does not consume any block gas.
 	blockGasUsed := &env.header.GasUsed
 	if tx.Type() == types.PoLTxType {
