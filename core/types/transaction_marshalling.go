@@ -154,6 +154,7 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 			enc.Commitments = itx.Sidecar.Commitments
 			enc.Proofs = itx.Sidecar.Proofs
 		}
+
 	case *SetCodeTx:
 		enc.ChainID = (*hexutil.Big)(itx.ChainID.ToBig())
 		enc.Nonce = (*hexutil.Uint64)(&itx.Nonce)
@@ -169,6 +170,22 @@ func (tx *Transaction) MarshalJSON() ([]byte, error) {
 		enc.R = (*hexutil.Big)(itx.R.ToBig())
 		enc.S = (*hexutil.Big)(itx.S.ToBig())
 		yparity := itx.V.Uint64()
+		enc.YParity = (*hexutil.Uint64)(&yparity)
+
+	case *PoLTx:
+		enc.ChainID = (*hexutil.Big)(itx.ChainID)
+		enc.To = tx.To()
+		enc.Nonce = (*hexutil.Uint64)(&itx.Nonce)
+		enc.Gas = (*hexutil.Uint64)(&itx.GasLimit)
+		enc.MaxFeePerGas = (*hexutil.Big)(itx.GasPrice)
+		enc.MaxPriorityFeePerGas = (*hexutil.Big)(itx.GasPrice)
+		enc.GasPrice = (*hexutil.Big)(itx.GasPrice)
+		enc.Input = (*hexutil.Bytes)(&itx.Data)
+		v, r, s := itx.rawSignatureValues()
+		enc.V = (*hexutil.Big)(v)
+		enc.R = (*hexutil.Big)(r)
+		enc.S = (*hexutil.Big)(s)
+		yparity := v.Uint64()
 		enc.YParity = (*hexutil.Uint64)(&yparity)
 	}
 	return json.Marshal(&enc)
