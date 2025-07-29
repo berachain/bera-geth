@@ -513,7 +513,12 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 		if dec.ChainID == nil {
 			return errors.New("missing required field 'chainId' in transaction")
 		}
-		itx.ChainID = (*big.Int)(dec.ChainID)
+		var overflow bool
+		chainID, overflow := uint256.FromBig(dec.ChainID.ToInt())
+		if overflow {
+			return errors.New("'chainId' value overflows uint256")
+		}
+		itx.ChainID = chainID.ToBig()
 		if dec.To == nil {
 			return errors.New("missing required field 'to' in transaction")
 		}
