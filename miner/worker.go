@@ -489,7 +489,7 @@ func (miner *Miner) commitTransactions(env *environment, plainTxs, blobTxs *tran
 func (miner *Miner) fillTransactions(interrupt *atomic.Int32, env *environment) error {
 	miner.confMu.RLock()
 	tip := miner.config.GasPrice
-prio := miner.prio
+	prio := miner.prio
 	miner.confMu.RUnlock()
 
 	// Berachain: Post-Prague1, add PoL tx to the block according to BRIP-0004.
