@@ -19,9 +19,20 @@ ADD . /bera-geth
 # makes it so that under certain circumstances, the docker layer can be cached,
 # and the builder can jump to the next (build all) command, with the go cache fully loaded.
 #
-RUN cd /bera-geth && go run build/ci.go install -static ./cmd/bera-geth
+# Pass git information to the build process when provided
+RUN cd /bera-geth && \
+    if [ -n "$VERSION" ]; then \
+        go run build/ci.go install -static -git-tag="$VERSION" -git-commit="$COMMIT" ./cmd/bera-geth; \
+    else \
+        go run build/ci.go install -static ./cmd/bera-geth; \
+    fi
 
-RUN cd /bera-geth && go run build/ci.go install -static
+RUN cd /bera-geth && \
+    if [ -n "$VERSION" ]; then \
+        go run build/ci.go install -static -git-tag="$VERSION" -git-commit="$COMMIT"; \
+    else \
+        go run build/ci.go install -static; \
+    fi
 
 # Pull all binaries into a second stage deploy alpine container
 FROM alpine:latest

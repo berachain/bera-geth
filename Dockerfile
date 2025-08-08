@@ -14,7 +14,14 @@ COPY go.sum /bera-geth/
 RUN cd /bera-geth && go mod download
 
 ADD . /bera-geth
-RUN cd /bera-geth && go run build/ci.go install -static ./cmd/bera-geth
+# Pass git information to the build process
+# When VERSION is provided (e.g., from CI), use it as the git tag
+RUN cd /bera-geth && \
+    if [ -n "$VERSION" ]; then \
+        go run build/ci.go install -static -git-tag="$VERSION" -git-commit="$COMMIT" ./cmd/bera-geth; \
+    else \
+        go run build/ci.go install -static ./cmd/bera-geth; \
+    fi
 
 # Pull Geth into a second stage deploy alpine container
 FROM alpine:latest
