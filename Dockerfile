@@ -6,6 +6,11 @@ ARG BUILDNUM=""
 # Build Geth in a stock Go builder container
 FROM golang:1.24-alpine AS builder
 
+# These build arguments need to be redeclared in the builder stage
+ARG COMMIT
+ARG VERSION
+ARG BUILDNUM
+
 RUN apk add --no-cache gcc musl-dev linux-headers git
 
 # Get dependencies - will also be cached if we won't change go.mod/go.sum
