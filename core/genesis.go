@@ -353,20 +353,6 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	// The genesis block has already been committed previously. Verify that the
 	// provided genesis with chain overrides matches the existing one, and update
 	// the stored chain config if necessary.
-
-	// PBSS fix: Skip reinitialization if genesis already exists
-	// This prevents state history truncation issues on repeat init calls
-	if rawdb.ReadStateScheme(db) == rawdb.PathScheme {
-		if genesis != nil && genesis.ToBlock().Hash() == ghash {
-			// Genesis matches, just return existing config
-			// This makes init idempotent for PBSS databases
-			if storedCfg == nil {
-				return nil, common.Hash{}, nil, errors.New("stored chain config not found for PBSS database")
-			}
-			return storedCfg, ghash, nil, nil
-		}
-	}
-
 	if genesis != nil {
 		if err := overrides.apply(genesis.Config); err != nil {
 			return nil, common.Hash{}, nil, err
