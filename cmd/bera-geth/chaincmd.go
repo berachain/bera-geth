@@ -287,10 +287,11 @@ func initGenesis(ctx *cli.Context) error {
 	var triedb *triedb.Database
 	if rawdb.ReadStateScheme(chaindb) == rawdb.PathScheme &&
 		rawdb.ReadChainConfig(chaindb, rawdb.ReadCanonicalHash(chaindb, 0)) != nil {
-		log.Info("PBSS db already initialized with matching genesis, skipping trie db initialization")
+		log.Info("PBSS db already initialized with genesis, skipping trie db initialization")
 	} else {
-		// Only create triedb if we're not using PBSS state scheme or genesis is empty in the db.
-		// Refer to https://github.com/ethereum/go-ethereum/pull/25523 for more details.
+		// Only create triedb if we're not using PBSS or genesis is empty on disk. Refer to
+		// https://github.com/ethereum/go-ethereum/pull/25523 for why the triedb cannot be
+		// re-created when using PBSS.
 		triedb = utils.MakeTrieDatabase(ctx, chaindb, ctx.Bool(utils.CachePreimagesFlag.Name), false, genesis.IsVerkle())
 		defer triedb.Close()
 	}

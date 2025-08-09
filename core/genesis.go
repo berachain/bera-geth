@@ -385,10 +385,11 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 		return newCfg, ghash, compatErr, nil
 	}
 	// Don't overwrite if the old is identical to the new. It's useful
-	// for the scenarios that database is opened in the read-only mode.
+	// for the scenarios that database is opened in the read-only mode
+	// OR if the chain config is updated to include new Berachain fork info.
 	storedData, _ := json.Marshal(storedCfg)
 	if newData, _ := json.Marshal(newCfg); !bytes.Equal(storedData, newData) {
-		log.Info("Writing new chain config")
+		log.Info("Writing new chain config", )
 		rawdb.WriteChainConfig(db, ghash, newCfg)
 	}
 	return newCfg, ghash, nil, nil
