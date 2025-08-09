@@ -307,8 +307,8 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	ghash := rawdb.ReadCanonicalHash(db, 0)
 	if (ghash == common.Hash{}) {
 		if genesis == nil {
-			log.Info("Writing default main-net genesis block")
-			genesis = DefaultGenesisBlock()
+			log.Info("Writing default berachain mainnet genesis block")
+			genesis = DefaultBerachainGenesisBlock()
 		} else {
 			log.Info("Writing custom genesis block")
 		}
@@ -332,8 +332,8 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 		// networks must explicitly specify the genesis in the config file, mainnet
 		// genesis will be used as default and the initialization will always fail.
 		if genesis == nil {
-			log.Info("Writing default main-net genesis block")
-			genesis = DefaultGenesisBlock()
+			log.Info("Writing default berachain mainnet genesis block")
+			genesis = DefaultBerachainGenesisBlock()
 		} else {
 			log.Info("Writing custom genesis block")
 		}
@@ -388,6 +388,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, triedb *triedb.Database, g
 	// for the scenarios that database is opened in the read-only mode.
 	storedData, _ := json.Marshal(storedCfg)
 	if newData, _ := json.Marshal(newCfg); !bytes.Equal(storedData, newData) {
+		log.Info("Writing new chain config")
 		rawdb.WriteChainConfig(db, ghash, newCfg)
 	}
 	return newCfg, ghash, nil, nil

@@ -47,6 +47,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/urfave/cli/v2"
 )
 
@@ -281,23 +282,18 @@ func initGenesis(ctx *cli.Context) error {
 	chaindb := utils.MakeChainDatabase(ctx, stack, false)
 	defer chaindb.Close()
 
-	// Berachain: Check if genesis already exists for PBSS databases BEFORE opening trie database
-	// This prevents the state history truncation that happens during trie database initialization
-	if rawdb.ReadStateScheme(chaindb) == rawdb.PathScheme {
-		existingHash := rawdb.ReadCanonicalHash(chaindb, 0)
-		if existingHash != (common.Hash{}) {
-			// Genesis exists, check if it matches what we're trying to init
-			if genesis.ToBlock().Hash() == existingHash {
-				// Genesis already initialized with same hash, skip everything
-				log.Info("PBSS database already initialized with matching genesis, skipping init",
-					"hash", existingHash.Hex())
-				return nil
-			}
-		}
+	// Berachain: Check if genesis already exists for PBSS databases BEFORE opening trie database.
+	// This prevents the state history truncation that happens during trie database initialization.
+	var triedb *triedb.Database
+	if rawdb.ReadStateScheme(chaindb) == rawdb.PathScheme &&
+		rawdb.ReadChainConfig(chaindb, rawdb.ReadCanonicalHash(chaindb, 0)) != nil {
+		log.Info("PBSS db already initialized with matching genesis, skipping trie db initialization")
+	} else {
+		// Only create triedb if we're not using PBSS state scheme or genesis is empty in the db.
+		// Refer to https://github.com/ethereum/go-ethereum/pull/25523 for more details.
+		triedb = utils.MakeTrieDatabase(ctx, chaindb, ctx.Bool(utils.CachePreimagesFlag.Name), false, genesis.IsVerkle())
+		defer triedb.Close()
 	}
-
-	triedb := utils.MakeTrieDatabase(ctx, chaindb, ctx.Bool(utils.CachePreimagesFlag.Name), false, genesis.IsVerkle())
-	defer triedb.Close()
 
 	_, hash, compatErr, err := core.SetupGenesisBlockWithOverride(chaindb, triedb, genesis, &overrides)
 	if err != nil {
