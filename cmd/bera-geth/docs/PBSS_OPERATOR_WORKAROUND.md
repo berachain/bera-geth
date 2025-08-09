@@ -9,17 +9,17 @@ If you're experiencing the "Failed to truncate extra state histories" error when
 **Instead of:**
 ```bash
 # DON'T DO THIS on every restart
-geth init --datadir /data genesis.json
-geth --datadir /data --syncmode full ...
+bera-geth init --datadir /data eth-genesis.json
+bera-geth --datadir /data --syncmode full ...
 ```
 
 **Do this:**
 ```bash
 # First time only
-geth init --datadir /data genesis.json
+bera-geth init --datadir /data eth-genesis.json
 
 # All subsequent restarts (no init)
-geth --datadir /data --syncmode full ...
+bera-geth --datadir /data --syncmode full ...
 ```
 
 ### For Automation/Scripts
@@ -29,18 +29,18 @@ Modify your startup scripts to check if the database already exists:
 ```bash
 #!/bin/bash
 DATADIR="/data"
-GENESIS="genesis.json"
+GENESIS="eth-genesis.json"
 
 # Only init if chaindata doesn't exist
-if [ ! -d "$DATADIR/geth/chaindata" ]; then
+if [ ! -d "$DATADIR/bera-geth/chaindata" ]; then
     echo "Initializing new database..."
-    geth init --datadir "$DATADIR" "$GENESIS"
+    bera-geth init --datadir "$DATADIR" "$GENESIS"
 else
     echo "Database already exists, skipping init"
 fi
 
 # Start geth normally
-geth --datadir "$DATADIR" --syncmode full ...
+bera-geth --datadir "$DATADIR" --syncmode full ...
 ```
 
 ### If You Need to Update Chain Config
@@ -48,11 +48,11 @@ geth --datadir "$DATADIR" --syncmode full ...
 When you need to update the chain configuration (e.g., for a hard fork):
 
 1. **Stop the node**
-2. **Backup your data** (especially `/geth/chaindata`)
+2. **Backup your data** (especially `/bera-geth/chaindata`)
 3. **Try starting without init first** - geth can often handle config updates automatically
 4. **If that fails**, use hash scheme temporarily:
    ```bash
-   geth --state.scheme=hash init --datadir /data new-genesis.json
+   bera-geth --state.scheme=hash init --datadir /data new-genesis.json
    ```
 
 ### Emergency Recovery
@@ -61,12 +61,12 @@ If your node is already in a failed state:
 
 ```bash
 # Option 1: Reset state histories (keeps blockchain data)
-rm -rf /data/geth/chaindata/ancient/state
-geth init --datadir /data genesis.json
+rm -rf /data/bera-geth/chaindata/ancient/state
+bera-geth init --datadir /data eth-genesis.json
 
 # Option 2: Full reset (last resort)
-rm -rf /data/geth/chaindata
-geth init --datadir /data genesis.json
+rm -rf /data/bera-geth/chaindata
+bera-geth init --datadir /data eth-genesis.json
 ```
 
 ## Why This Happens
@@ -75,9 +75,6 @@ geth init --datadir /data genesis.json
 - Running `init` multiple times corrupts state history metadata
 - The issue does NOT occur with hash-based state scheme
 
-## Long-term Solution
-
-Apply the patch in `minimal_pbss_init_fix.patch` to your geth build, or wait for an upstream fix.
 
 ## Testing Your Setup
 
