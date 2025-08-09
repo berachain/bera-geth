@@ -21,7 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -127,6 +129,7 @@ type Config struct {
 	SnapshotNoBuild   bool // Flag Whether the state generation is allowed
 	NoAsyncFlush      bool // Flag whether the background buffer flushing is allowed
 	NoAsyncGeneration bool // Flag whether the background generation is allowed
+	ForceInit         bool // Flag whether to force reset of state history and journal during init
 }
 
 // sanitize checks the provided user configurations and changes anything that's
@@ -254,6 +257,10 @@ func New(diskdb ethdb.Database, config *Config, isVerkle bool) *Database {
 	}
 	// Construct the layer tree by resolving the in-disk singleton state
 	// and in-memory layer journal.
+	if config.ForceInit {
+		log.Info("Force init flag set, resetting state history and journal")
+		db.forceReset()
+	}
 	db.tree = newLayerTree(db.loadLayers())
 
 	// Repair the state history, which might not be aligned with the state
@@ -285,6 +292,25 @@ func New(diskdb ethdb.Database, config *Config, isVerkle bool) *Database {
 	}
 	log.Info("Initialized path database", fields...)
 	return db
+}
+
+// forceReset performs a complete reset of the state history and journal data.
+// This is used when the ForceInit flag is set to recover from corruption.
+func (db *Database) forceReset() {
+	// Remove any existing journal file
+	if path := db.journalPath(); path != "" && common.FileExist(path) {
+		log.Info("Removing existing journal file", "path", path)
+		if err := os.Remove(path); err != nil {
+			log.Warn("Failed to remove journal file", "path", path, "err", err)
+		}
+	}
+	// Clear journal from database if stored there
+	rawdb.DeleteTrieJournal(db.diskdb)
+	
+	// Reset persistent state ID
+	rawdb.WritePersistentStateID(db.diskdb, 0)
+	
+	log.Info("Force reset completed - journal and state history cleared")
 }
 
 // repairHistory truncates leftover state history objects, which may occur due
@@ -333,6 +359,20 @@ func (db *Database) repairHistory() error {
 	// aligned with the disk layer. It might happen after a unclean shutdown.
 	pruned, err := truncateFromHead(db.diskdb, db.freezer, id)
 	if err != nil {
+		// Check if this is an "out of range" error which can happen when
+		// journal is discarded and state history becomes misaligned
+		if strings.Contains(err.Error(), "out of range") {
+			log.Warn("State history is severely corrupted, resetting entirely", "err", err)
+			// Reset the entire state history as a recovery mechanism
+			rawdb.DeleteStateHistoryIndexMetadata(db.diskdb)
+			rawdb.DeleteStateHistoryIndex(db.diskdb)
+			resetErr := db.freezer.Reset()
+			if resetErr != nil {
+				log.Crit("Failed to reset corrupted state histories", "err", resetErr)
+			}
+			log.Info("Reset corrupted state history due to range error")
+			return nil
+		}
 		log.Crit("Failed to truncate extra state histories", "err", err)
 	}
 	if pruned != 0 {

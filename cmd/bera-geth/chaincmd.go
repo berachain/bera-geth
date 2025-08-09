@@ -58,6 +58,7 @@ var (
 		ArgsUsage: "<genesisPath>",
 		Flags: slices.Concat([]cli.Flag{
 			utils.CachePreimagesFlag,
+			utils.ForceInitFlag,
 			utils.OverrideOsaka,
 			utils.OverrideVerkle,
 		}, utils.DatabaseFlags),

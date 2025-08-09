@@ -498,6 +498,11 @@ var (
 		Usage:    "Enable recording the SHA3/keccak preimages of trie keys",
 		Category: flags.PerfCategory,
 	}
+	ForceInitFlag = &cli.BoolFlag{
+		Name:     "force-init",
+		Usage:    "Force reset of state history and journal during init to recover from corruption",
+		Category: flags.EthCategory,
+	}
 	CacheLogSizeFlag = &cli.IntFlag{
 		Name:     "cache.blocklogs",
 		Usage:    "Size (in number of blocks) of the log cache for filtering",
@@ -2303,7 +2308,12 @@ func MakeTrieDatabase(ctx *cli.Context, disk ethdb.Database, preimage bool, read
 	if readOnly {
 		config.PathDB = pathdb.ReadOnly
 	} else {
-		config.PathDB = pathdb.Defaults
+		pathdbConfig := *pathdb.Defaults
+		// Check for force init flag
+		if ctx.IsSet(ForceInitFlag.Name) && ctx.Bool(ForceInitFlag.Name) {
+			pathdbConfig.ForceInit = true
+		}
+		config.PathDB = &pathdbConfig
 	}
 	return triedb.NewDatabase(disk, config)
 }
