@@ -65,11 +65,9 @@ jobs:
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
         
         # Get the digest of the pushed manifest list (top-level manifest list digest)
-        DIGEST=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION} --format '{{.Descriptor.Digest}}' | tr -d '\n')
-        # Fallback parsing if templating changes in future buildx versions
-        if [ -z "$DIGEST" ]; then
-          DIGEST=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION} | grep -m1 '^Digest:' | awk '{print $2}' | tr -d '\n')
-        fi
+        # Avoid relying on template fields (which vary across buildx versions) and avoid -e exit on failure
+        INSPECT_OUTPUT=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION} || true)
+        DIGEST=$(printf "%s\n" "$INSPECT_OUTPUT" | awk '/^Digest:/ {print $2; exit}')
         if [ -z "$DIGEST" ]; then
           echo "Error: Could not determine image digest for ghcr.io/berachain/bera-geth:${VERSION}"
           exit 1
