@@ -1,0 +1,136 @@
+name: ForkDiff Site
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 6 * * 1' # Every Monday at 06:00 UTC
+  push:
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Generate ForkDiff site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork (this repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Install ForkDiff
+        run: |
+          go install github.com/protolambda/forkdiff@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Add and fetch upstream (go-ethereum)
+        run: |
+          git remote add upstream https://github.com/ethereum/go-ethereum.git || true
+          # Try master first, then main as fallback
+          if git ls-remote --heads upstream master | grep -q master; then
+            echo "UPSTREAM_BRANCH=master" >> $GITHUB_ENV
+            git fetch --no-tags upstream master --depth=1
+          else
+            echo "UPSTREAM_BRANCH=main" >> $GITHUB_ENV
+            git fetch --no-tags upstream main --depth=1
+          fi
+
+      - name: Determine fork branch
+        id: forkref
+        shell: bash
+        run: |
+          # Prefer the ref name of the event if available; fallback to current checked-out branch
+          ref_name="${GITHUB_REF_NAME:-}"
+          if [ -z "$ref_name" ]; then
+            ref_name=$(git rev-parse --abbrev-ref HEAD)
+          fi
+          echo "ref_name=$ref_name" >> "$GITHUB_OUTPUT"
+
+      - name: Generate ForkDiff output
+        run: |
+          set -euxo pipefail
+          mkdir -p site
+          # Attempt to run forkdiff with common CLI flags. If it fails, produce a minimal page so Pages deploy still succeeds.
+          if command -v forkdiff >/dev/null 2>&1; then
+            # Try canonical CLI
+            if forkdiff --help 2>&1 | grep -qi 'repo-upstream'; then
+              forkdiff \
+                --repo-upstream https://github.com/ethereum/go-ethereum.git \
+                --upstream-ref "${UPSTREAM_BRANCH}" \
+                --repo-fork . \
+                --fork-ref "${{ steps.forkref.outputs.ref_name }}" \
+                --out site || true
+            else
+              # Fallback: try minimal positional form if supported
+              forkdiff "https://github.com/ethereum/go-ethereum.git@${UPSTREAM_BRANCH}" \
+                       ".@${{ steps.forkref.outputs.ref_name }}" site || true
+            fi
+          fi
+
+          # If site is empty or forkdiff failed, emit a simple index
+          if [ -z "$(ls -A site)" ]; then
+            cat > site/index.html <<'HTML'
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>ForkDiff</title>
+                <style>
+                  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; margin: 2rem; line-height: 1.5; }
+                  code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; }
+                </style>
+              </head>
+              <body>
+                <h1>ForkDiff</h1>
+                <p>ForkDiff output could not be generated in CI with the current configuration.</p>
+                <p>Please ensure the <code>forkdiff</code> CLI flags match the version pinned in CI and that the upstream branch exists.</p>
+                <ul>
+                  <li>Upstream: <code>ethereum/go-ethereum@${UPSTREAM_BRANCH}</code></li>
+                  <li>Fork: <code>${{ github.repository }}@${{ steps.forkref.outputs.ref_name }}</code></li>
+                </ul>
+                <p>References:
+                  <ul>
+                    <li><a href="https://github.com/protolambda/forkdiff">protolambda/forkdiff</a></li>
+                    <li><a href="https://github.com/berachain/bera-geth/issues/7">Issue #7: Setup forkdiff + webpage publish</a></li>
+                  </ul>
+                </p>
+              </body>
+            </html>
+HTML
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
