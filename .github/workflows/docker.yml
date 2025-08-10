@@ -6,6 +6,7 @@ on:
       - "v1.*"
     branches:
       - "main"
+      - "fix-docker-signing"
   workflow_dispatch:
 
 jobs:
@@ -39,9 +40,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push multi-arch images to GHCR
-      run: |
-        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
+    # - name: Build and push multi-arch images to GHCR
+    #   run: |
+    #     go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
 
     - name: Get image digest and version
       id: image_info
@@ -54,6 +55,8 @@ jobs:
           VERSION="latest"
         fi
 
+        VERSION="latest"
+
         if [ -z "$VERSION" ]; then
           echo "Error: Could not determine version from ref '${{ github.ref }}'"
           exit 1
@@ -61,10 +64,13 @@ jobs:
 
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
         
-        # Get the digest of the pushed image. The --format option can be unreliable,
-        # so we parse the full JSON output to find the digest of the manifest list.
-        MANIFEST_JSON=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION})
-        echo "DIGEST=$(echo "${MANIFEST_JSON}" | grep '"digest"' | head -n 1 | cut -d '"' -f 4)" >> $GITHUB_OUTPUT
+        # Get the digest of the pushed manifest list
+        DIGEST=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION} --format '{{.Digest}}' | tr -d '\n')
+        if [ -z "$DIGEST" ]; then
+          echo "Error: Could not determine image digest for ghcr.io/berachain/bera-geth:${VERSION}"
+          exit 1
+        fi
+        echo "DIGEST=${DIGEST}" >> $GITHUB_OUTPUT
     outputs:
       VERSION: ${{ steps.image_info.outputs.VERSION }}
       DIGEST: ${{ steps.image_info.outputs.DIGEST }}
@@ -97,6 +103,7 @@ jobs:
     - name: Sign Docker images with Cosign
       env:
         COSIGN_EXPERIMENTAL: true
+        COSIGN_YES: "true"
       run: |
         # Sign the tagged version if it exists
         if [ -n "${{ env.VERSION }}" ]; then
@@ -104,4 +111,9 @@ jobs:
         fi
         
         # Sign the multi-arch manifest by digest
-        cosign sign --yes ghcr.io/berachain/bera-geth@${{ env.DIGEST }}
+        if [ -n "${{ env.DIGEST }}" ]; then
+          cosign sign --yes ghcr.io/berachain/bera-geth@${{ env.DIGEST }}
+        else
+          echo "Error: DIGEST is empty. Skipping digest signing."
+          exit 1
+        fi
