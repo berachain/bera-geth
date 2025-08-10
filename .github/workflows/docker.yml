@@ -6,7 +6,6 @@ on:
       - "v1.*"
     branches:
       - "main"
-      - "fix-docker-signing"
   workflow_dispatch:
 
 jobs:
@@ -40,9 +39,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    # - name: Build and push multi-arch images to GHCR
-    #   run: |
-    #     go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
+    - name: Build and push multi-arch images to GHCR
+      run: |
+        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
 
     - name: Get image digest and version
       id: image_info
@@ -54,8 +53,6 @@ jobs:
         elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
           VERSION="latest"
         fi
-
-        VERSION="latest"
 
         if [ -z "$VERSION" ]; then
           echo "Error: Could not determine version from ref '${{ github.ref }}'"
