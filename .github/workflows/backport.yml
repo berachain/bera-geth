@@ -116,7 +116,7 @@ jobs:
             *This pull request was created automatically by the backport action.*
           
           # Labels to add to the backport PR
-          add_labels: "backport,automated"
+          add_labels: "automated"
           
           # Add original PR author as assignee
           add_author_as_assignee: true
