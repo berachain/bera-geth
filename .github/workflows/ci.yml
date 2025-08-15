@@ -41,7 +41,7 @@ jobs:
         fi
         
         # Now run linters with the Go 1.25-built binary
-        build/cache/golangci-lint-2.0.2-linux-amd64/golangci-lint run --config .golangci.yml ./...
+        go run build/ci.go lint
         go run build/ci.go check_generate
         go run build/ci.go check_baddeps
 
