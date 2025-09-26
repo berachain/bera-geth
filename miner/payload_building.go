@@ -260,12 +260,15 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 			noTxs:          false,
 		}
 
+		numPayloadUpdates := 0
 		for {
 			select {
 			case <-timer.C:
 				start := time.Now()
 				r := miner.generateWork(fullParams, witness)
 				if r.err == nil {
+					numPayloadUpdates++
+					log.Debug("Updated payload", "id", payload.id, "count", numPayloadUpdates)
 					payload.update(r, time.Since(start))
 				} else {
 					log.Info("Error while generating work", "id", payload.id, "err", r.err)
