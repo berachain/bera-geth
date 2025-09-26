@@ -122,14 +122,14 @@ func (miner *Miner) generateWork(genParam *generateParams, witness bool) *newPay
 	// Also add size of withdrawals to work block size.
 	work.size += uint64(genParam.withdrawals.Size())
 
-	if genParam.noTxs {
-		// Berachain: Post-Prague1 we commit the PoL tx even when building an empty block.
-		// This is a safety measure to ensure that if the payload is requested early, the
-		// returned payload satisfies the Prague1 requirements, i.e. include the PoL tx.
-		if err = miner.commitPoLTx(work); err != nil {
-			return &newPayloadResult{err: err}
-		}
-	} else {
+	// Berachain: Post-Prague1 we commit the PoL tx even when building an empty block.
+	// This is a safety measure to ensure that if the payload is requested early, the
+	// returned payload satisfies the Prague1 requirements, i.e. include the PoL tx.
+	if err = miner.commitPoLTx(work); err != nil {
+		return &newPayloadResult{err: err}
+	}
+
+	if !genParam.noTxs {
 		interrupt := new(atomic.Int32)
 		timer := time.AfterFunc(miner.config.Recommit, func() {
 			interrupt.Store(commitInterruptTimeout)
