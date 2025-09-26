@@ -55,9 +55,11 @@ var DefaultConfig = Config{
 	GasCeil:  36_000_000,    // Berachain: set to 36mil to match Prague default
 	GasPrice: big.NewInt(1), // Berachain: set to 1 wei to match reth's default
 
-	// Berachain:The default recommit time is chosen as 0.5s to allow for around
+	// Berachain: The default recommit time is chosen as 0.5s to allow for around
 	// 2-3 rounds of payload generation. On average with 2s stable block time,
 	// there is 1.5s gap between start and stop payload generation.
+	//
+	// TODO(Berachain): Increase to 1s after testing of block fullness.
 	Recommit: 500 * time.Millisecond,
 }
 

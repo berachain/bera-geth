@@ -102,7 +102,7 @@ func newPayload(empty *types.Block, emptyRequests [][]byte, witness *stateless.W
 }
 
 // update updates the full-block with latest built version.
-func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
+func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration, numPayloadUpdates int) {
 	payload.lock.Lock()
 	defer payload.lock.Unlock()
 
@@ -132,6 +132,7 @@ func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
 			"fees", feesInEther,
 			"root", r.block.Root(),
 			"elapsed", common.PrettyDuration(elapsed),
+			"count", numPayloadUpdates,
 		)
 	}
 	payload.cond.Broadcast() // fire signal for notifying full block
@@ -268,8 +269,7 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 				r := miner.generateWork(fullParams, witness)
 				if r.err == nil {
 					numPayloadUpdates++
-					log.Debug("Updated payload", "id", payload.id, "count", numPayloadUpdates)
-					payload.update(r, time.Since(start))
+					payload.update(r, time.Since(start), numPayloadUpdates)
 				} else {
 					log.Info("Error while generating work", "id", payload.id, "err", r.err)
 				}
