@@ -275,10 +275,10 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 				}
 				timer.Reset(miner.config.Recommit)
 			case <-payload.stop:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery", "full", payload.full != nil)
 				return
 			case <-endTimer.C:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout", "full", payload.full != nil)
 				return
 			}
 		}
