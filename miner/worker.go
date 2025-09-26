@@ -474,8 +474,8 @@ func (miner *Miner) commitTransactions(env *environment, plainTxs, blobTxs *tran
 	return nil
 }
 
+// Berachain: Post-Prague1, add PoL tx to the block according to BRIP-0004.
 func (miner *Miner) commitPoLTx(env *environment) error {
-	// Berachain: Post-Prague1, add PoL tx to the block according to BRIP-0004.
 	if env.gasPool == nil {
 		// NOTE: this check is moved here from the commitTransactions loop because we are
 		// "committing" a transaction outside of the loop.
