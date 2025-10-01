@@ -102,7 +102,7 @@ func newPayload(empty *types.Block, emptyRequests [][]byte, witness *stateless.W
 }
 
 // update updates the full-block with latest built version.
-func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
+func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration, numPayloadUpdates int) {
 	payload.lock.Lock()
 	defer payload.lock.Unlock()
 
@@ -132,6 +132,7 @@ func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
 			"fees", feesInEther,
 			"root", r.block.Root(),
 			"elapsed", common.PrettyDuration(elapsed),
+			"count", numPayloadUpdates,
 		)
 	}
 	payload.cond.Broadcast() // fire signal for notifying full block
@@ -260,22 +261,24 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 			noTxs:          false,
 		}
 
+		numPayloadUpdates := 0
 		for {
 			select {
 			case <-timer.C:
 				start := time.Now()
 				r := miner.generateWork(fullParams, witness)
 				if r.err == nil {
-					payload.update(r, time.Since(start))
+					numPayloadUpdates++
+					payload.update(r, time.Since(start), numPayloadUpdates)
 				} else {
 					log.Info("Error while generating work", "id", payload.id, "err", r.err)
 				}
 				timer.Reset(miner.config.Recommit)
 			case <-payload.stop:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery", "full", payload.full != nil)
 				return
 			case <-endTimer.C:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout", "full", payload.full != nil)
 				return
 			}
 		}

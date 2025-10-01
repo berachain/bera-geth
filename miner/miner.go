@@ -55,11 +55,10 @@ var DefaultConfig = Config{
 	GasCeil:  36_000_000,    // Berachain: set to 36mil to match Prague default
 	GasPrice: big.NewInt(1), // Berachain: set to 1 wei to match reth's default
 
-	// The default recommit time is chosen as two seconds since
-	// consensus-layer usually will wait a half slot of time(6s)
-	// for payload generation. It should be enough for Geth to
-	// run 3 rounds.
-	Recommit: 2 * time.Second,
+	// Berachain: The default recommit time is chosen as 1s to allow for around
+	// 1-2 rounds of payload generation. On average with 2s stable block time,
+	// there is 1.5s gap between start and stop payload generation.
+	Recommit: 1 * time.Second,
 }
 
 // Miner is the main object which takes care of submitting new work to consensus

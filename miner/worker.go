@@ -122,6 +122,13 @@ func (miner *Miner) generateWork(genParam *generateParams, witness bool) *newPay
 	// Also add size of withdrawals to work block size.
 	work.size += uint64(genParam.withdrawals.Size())
 
+	// Berachain: Post-Prague1 we commit the PoL tx even when building an empty block.
+	// This is a safety measure to ensure that if the payload is requested early, the
+	// returned payload satisfies the Prague1 requirements, i.e. include the PoL tx.
+	if err = miner.commitPoLTx(work); err != nil {
+		return &newPayloadResult{err: err}
+	}
+
 	if !genParam.noTxs {
 		interrupt := new(atomic.Int32)
 		timer := time.AfterFunc(miner.config.Recommit, func() {
@@ -483,16 +490,8 @@ func (miner *Miner) commitTransactions(env *environment, plainTxs, blobTxs *tran
 	return nil
 }
 
-// fillTransactions retrieves the pending transactions from the txpool and fills them
-// into the given sealing block. The transaction selection and ordering strategy can
-// be customized with the plugin in the future.
-func (miner *Miner) fillTransactions(interrupt *atomic.Int32, env *environment) error {
-	miner.confMu.RLock()
-	tip := miner.config.GasPrice
-	prio := miner.prio
-	miner.confMu.RUnlock()
-
-	// Berachain: Post-Prague1, add PoL tx to the block according to BRIP-0004.
+// Berachain: Post-Prague1, add PoL tx to the block according to BRIP-0004.
+func (miner *Miner) commitPoLTx(env *environment) error {
 	if env.gasPool == nil {
 		// NOTE: this check is moved here from the commitTransactions loop because we are
 		// "committing" a transaction outside of the loop.
@@ -519,6 +518,17 @@ func (miner *Miner) fillTransactions(interrupt *atomic.Int32, env *environment) 
 			return err
 		}
 	}
+	return nil
+}
+
+// fillTransactions retrieves the pending transactions from the txpool and fills them
+// into the given sealing block. The transaction selection and ordering strategy can
+// be customized with the plugin in the future.
+func (miner *Miner) fillTransactions(interrupt *atomic.Int32, env *environment) error {
+	miner.confMu.RLock()
+	tip := miner.config.GasPrice
+	prio := miner.prio
+	miner.confMu.RUnlock()
 
 	// Retrieve the pending transactions pre-filtered by the 1559/4844 dynamic fees
 	filter := txpool.PendingFilter{
