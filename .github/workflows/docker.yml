@@ -41,7 +41,7 @@ jobs:
 
     - name: Build and push multi-arch images to GHCR
       run: |
-        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth -upload
+        go run build/ci.go dockerx -platform linux/amd64,linux/arm64 -hub ghcr.io/berachain/bera-geth-internal -upload
 
     - name: Get image digest and version
       id: image_info
@@ -63,10 +63,10 @@ jobs:
         
         # Get the digest of the pushed manifest list (top-level manifest list digest)
         # Avoid relying on template fields (which vary across buildx versions) and avoid -e exit on failure
-        INSPECT_OUTPUT=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth:${VERSION} || true)
+        INSPECT_OUTPUT=$(docker buildx imagetools inspect ghcr.io/berachain/bera-geth-internal:${VERSION} || true)
         DIGEST=$(printf "%s\n" "$INSPECT_OUTPUT" | awk '/^Digest:/ {print $2; exit}')
         if [ -z "$DIGEST" ]; then
-          echo "Error: Could not determine image digest for ghcr.io/berachain/bera-geth:${VERSION}"
+          echo "Error: Could not determine image digest for ghcr.io/berachain/bera-geth-internal:${VERSION}"
           exit 1
         fi
         echo "DIGEST=${DIGEST}" >> $GITHUB_OUTPUT
@@ -106,12 +106,12 @@ jobs:
       run: |
         # Sign the tagged version if it exists
         if [ -n "${{ env.VERSION }}" ]; then
-          cosign sign --yes ghcr.io/berachain/bera-geth:${{ env.VERSION }}
+          cosign sign --yes ghcr.io/berachain/bera-geth-internal:${{ env.VERSION }}
         fi
-        
+
         # Sign the multi-arch manifest by digest
         if [ -n "${{ env.DIGEST }}" ]; then
-          cosign sign --yes ghcr.io/berachain/bera-geth@${{ env.DIGEST }}
+          cosign sign --yes ghcr.io/berachain/bera-geth-internal@${{ env.DIGEST }}
         else
           echo "Error: DIGEST is empty. Skipping digest signing."
           exit 1
