@@ -21,12 +21,20 @@ import (
 	"fmt"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie"
+)
+
+var (
+	// ERC20 Transfer event signature: keccak256("Transfer(address,address,uint256)")
+	transferSig = common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+	// InternalBalanceChanged event signature: keccak256("InternalBalanceChanged(address,address,int256)")
+	internalBalanceChangedSig = common.HexToHash("0x18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42")
 )
 
 // BlockValidator is responsible for validating block headers, uncles and
@@ -172,6 +180,39 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	header := block.Header()
 	if block.GasUsed() != res.GasUsed {
 		return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), res.GasUsed)
+	}
+
+	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
+	if v.config.IsPrague3(block.Number(), block.Time()) {
+		for i, receipt := range res.Receipts {
+			for _, log := range receipt.Logs {
+				// Check if this is a Transfer event (first topic is the event signature).
+				if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
+					// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses.
+					fromAddr := common.BytesToAddress(log.Topics[1].Bytes())
+					toAddr := common.BytesToAddress(log.Topics[2].Bytes())
+
+					// Check if the transfer is from or to the BEX vault.
+					if fromAddr == v.config.Berachain.Prague3.BexVaultAddress ||
+						toAddr == v.config.Berachain.Prague3.BexVaultAddress {
+						return fmt.Errorf("prague3: block contains transaction %v with ERC20 transfer to/from BEX vault", block.Transactions()[i].Hash().Hex())
+					}
+
+					// Check if either from or to address is blocked.
+					for _, blockedAddr := range v.config.Berachain.Prague3.BlockedAddresses {
+						if (fromAddr == blockedAddr && toAddr != v.config.Berachain.Prague3.RescueAddress) ||
+							(toAddr == blockedAddr) {
+							return fmt.Errorf("prague3: block contains transaction %v with ERC20 transfer from/to blocked address %v", block.Transactions()[i].Hash().Hex(), blockedAddr.Hex())
+						}
+					}
+				}
+
+				// Check if this is an InternalBalanceChanged event from BEX (first topic is the event signature).
+				if log.Address == v.config.Berachain.Prague3.BexVaultAddress && len(log.Topics) > 0 && log.Topics[0] == internalBalanceChangedSig {
+					return fmt.Errorf("prague3: block contains transaction %v with InternalBalanceChanged from BEX vault", block.Transactions()[i].Hash().Hex())
+				}
+			}
+		}
 	}
 	// Validate the received block's bloom with the one derived from the generated receipts.
 	// For valid blocks this should always validate to true.
