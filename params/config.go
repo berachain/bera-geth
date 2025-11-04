@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params/forks"
@@ -221,7 +222,7 @@ var (
 				MinimumBaseFeeWei: big.NewInt(0),
 			},
 			Prague3: Prague3Config{
-				Time:            newUint64(1762164459),
+				Time:            newUint64(1762164459), // Nov 03 2025 10:07:39 UTC
 				BexVaultAddress: common.HexToAddress("0x4be03f781c497a489e3cb0287833452ca9b9e80b"),
 				BlockedAddresses: []common.Address{
 					common.HexToAddress("0x9BAD77F1D527CD2D023d33eB3597A456d0c1Ab4a"),
@@ -686,7 +687,11 @@ type Prague3Config struct {
 func (c Prague3Config) String() string {
 	banner := "prague3"
 	if c.Time != nil {
-		banner += fmt.Sprintf("(time: %v, bexVaultAddress: %v, blockedAddresses: %v, rescueAddress: %v)", *c.Time, c.BexVaultAddress, len(c.BlockedAddresses), c.RescueAddress)
+		blocked := make([]string, 0, len(c.BlockedAddresses))
+		for _, addr := range c.BlockedAddresses {
+			blocked = append(blocked, addr.String())
+		}
+		banner += fmt.Sprintf("(time: %v, bexVaultAddress: %v, blockedAddresses: [%s], rescueAddress: %v)", *c.Time, c.BexVaultAddress, strings.Join(blocked, ", "), c.RescueAddress)
 	}
 	return banner
 }

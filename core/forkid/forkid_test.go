@@ -154,10 +154,10 @@ func TestCreation(t *testing.T) {
 				{100, 1756915199, ID{Hash: checksumToBytes(0x3f78b127), Next: 1756915200}}, // Before Prague1
 				{100, 1756915200, ID{Hash: checksumToBytes(0xd2ebecac), Next: 1759248000}}, // Prague1 active, before Prague2
 				{100, 1759247999, ID{Hash: checksumToBytes(0xd2ebecac), Next: 1759248000}}, // Before Prague2
-				{100, 1759248000, ID{Hash: checksumToBytes(0xcbbf6c9f), Next: 1762164266}}, // Prague2 active
-				{100, 1762164265, ID{Hash: checksumToBytes(0xcbbf6c9f), Next: 1762164266}}, // Before Prague3
-				{100, 1762164266, ID{Hash: checksumToBytes(0x88f75350), Next: 0}},          // Prague3 active
-				{1000, 2000000000, ID{Hash: checksumToBytes(0x88f75350), Next: 0}},         // Far future
+				{100, 1759248000, ID{Hash: checksumToBytes(0xcbbf6c9f), Next: 1762164459}}, // Prague2 active
+				{100, 1762164458, ID{Hash: checksumToBytes(0xcbbf6c9f), Next: 1762164459}}, // Before Prague3
+				{100, 1762164459, ID{Hash: checksumToBytes(0x6494a176), Next: 0}},          // Prague3 active
+				{1000, 2000000000, ID{Hash: checksumToBytes(0x6494a176), Next: 0}},         // Far future
 			},
 		},
 		// Bepolia testnet test cases
