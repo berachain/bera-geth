@@ -366,6 +366,7 @@ func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.SetGas(gp)
+		return nil, err
 	}
 
 	// Berachain: Prague3 post-processing.
@@ -373,7 +374,6 @@ func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.SetGas(gp)
 	}
-
 	return receipt, err
 }
 
