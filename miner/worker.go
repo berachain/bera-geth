@@ -366,52 +366,8 @@ func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.SetGas(gp)
-		return nil, err
-	}
-
-	// Berachain: Prague3 post-processing.
-	if err := miner.validatePrague3Transaction(env, receipt); err != nil {
-		env.state.RevertToSnapshot(snap)
-		env.gasPool.SetGas(gp)
 	}
 	return receipt, err
-}
-
-// validatePrague3Transaction validates the transaction for Prague3 post-processing.
-func (miner *Miner) validatePrague3Transaction(env *environment, receipt *types.Receipt) error {
-	// Prague3 validation: Skip transaction if it contains ERC20 transfers from/to blocked addresses
-	if miner.chainConfig.IsPrague3(env.header.Number, env.header.Time) {
-		for _, log := range receipt.Logs {
-			// Check if this is a Transfer event (first topic is the event signature)
-			if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
-				// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses
-				fromAddr := common.BytesToAddress(log.Topics[1].Bytes())
-				toAddr := common.BytesToAddress(log.Topics[2].Bytes())
-
-				// Check if the transfer is from or to the BEX vault.
-				if fromAddr == miner.chainConfig.Berachain.Prague3.BexVaultAddress ||
-					toAddr == miner.chainConfig.Berachain.Prague3.BexVaultAddress {
-					return errors.New("prague3: blob transaction contains ERC20 transfer to/from BEX vault")
-				}
-
-				// Check if either from or to address is blocked
-				for _, blockedAddr := range miner.chainConfig.Berachain.Prague3.BlockedAddresses {
-					if (fromAddr == blockedAddr && toAddr != miner.chainConfig.Berachain.Prague3.RescueAddress) ||
-						(toAddr == blockedAddr) {
-						// Revert the transaction and skip it
-						return errors.New("prague3: transaction contains ERC20 transfer from/to blocked address")
-					}
-				}
-			}
-
-			// Check if this is an InternalBalanceChanged event from BEX (first topic is the event signature).
-			if log.Address == miner.chainConfig.Berachain.Prague3.BexVaultAddress && len(log.Topics) > 0 && log.Topics[0] == internalBalanceChangedSig {
-				return errors.New("prague3: transaction contains InternalBalanceChanged event from BEX vault")
-			}
-		}
-	}
-
-	return nil
 }
 
 func (miner *Miner) commitTransactions(env *environment, plainTxs, blobTxs *transactionsByPriceAndNonce, interrupt *atomic.Int32) error {
