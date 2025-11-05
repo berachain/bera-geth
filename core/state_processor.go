@@ -31,6 +31,13 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
+var (
+	// ERC20 Transfer event signature: keccak256("Transfer(address,address,uint256)")
+	transferSig = common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+	// InternalBalanceChanged event signature: keccak256("InternalBalanceChanged(address,address,int256)")
+	internalBalanceChangedSig = common.HexToHash("0x18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42")
+)
+
 // StateProcessor is a basic Processor, which takes care of transitioning
 // state from one point to another.
 //
@@ -156,15 +163,17 @@ func ApplyTransactionWithEVM(msg *Message, gp *GasPool, statedb *state.StateDB, 
 		return nil, err
 	}
 
-	// Calculate items for receipt.
-	*usedGas += result.UsedGas
-	receipt = MakeReceipt(evm, result, statedb, blockNumber, blockHash, blockTime, tx, *usedGas, []byte{})
+	// Berachain: Pre-calculate items for receipt to do Prague3 validation.
+	// NOTE: Important to enforce that the statedb usage inside of MakeReceipt is not affected by
+	// calling Finalise or IntermediateRoot; before modification, MakeReceipt was called after
+	// statedb was updated with pending changes. Currently MakeReceipt only uses statedb.logs and
+	// statedb.txIndex, both of which are unaffected by Finalise or IntermediateRoot.
+	blockGasUsed := *usedGas + result.UsedGas
+	receipt = MakeReceipt(evm, result, statedb, blockNumber, blockHash, blockTime, tx, blockGasUsed, nil)
 
-	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
+	// Berachain: If Prague3, check for ERC20 transfers involving blocked addresses.
 	if evm.ChainConfig().IsPrague3(blockNumber, blockTime) {
 		if err := ValidatePrague3Transaction(&evm.ChainConfig().Berachain.Prague3, receipt); err != nil {
-			// We must decrement the pointer that was increased
-			*usedGas -= result.UsedGas
 			return nil, err
 		}
 	}
@@ -176,6 +185,7 @@ func ApplyTransactionWithEVM(msg *Message, gp *GasPool, statedb *state.StateDB, 
 		// Re-update the receipt with the new intermediate root.
 		receipt.PostState = statedb.IntermediateRoot(evm.ChainConfig().IsEIP158(blockNumber)).Bytes()
 	}
+	*usedGas = blockGasUsed
 
 	// Merge the tx-local access event into the "block-local" one, in order to collect
 	// all values, so that the witness can be built.
@@ -234,7 +244,7 @@ func ApplyTransaction(evm *vm.EVM, gp *GasPool, statedb *state.StateDB, header *
 // transfers from/to certain blocked addresses and InternalBalanceChanged events from the BEX vault.
 func ValidatePrague3Transaction(cfg *params.Prague3Config, receipt *types.Receipt) error {
 	for _, log := range receipt.Logs {
-		// Check if this is a Transfer event (first topic is the event signature)
+		// Check if this is a ERC20 Transfer event (first topic is the event signature)
 		if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
 			// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses
 			fromAddr := common.BytesToAddress(log.Topics[1].Bytes())

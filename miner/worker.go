@@ -38,13 +38,6 @@ import (
 )
 
 var (
-	// ERC20 Transfer event signature: keccak256("Transfer(address,address,uint256)")
-	transferSig = common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	// InternalBalanceChanged event signature: keccak256("InternalBalanceChanged(address,address,int256)")
-	internalBalanceChangedSig = common.HexToHash("0x18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42")
-)
-
-var (
 	errBlockInterruptedByNewHead  = errors.New("new head arrived while building block")
 	errBlockInterruptedByRecommit = errors.New("recommit interrupt while building block")
 	errBlockInterruptedByTimeout  = errors.New("timeout while building block")
