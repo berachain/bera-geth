@@ -313,6 +313,72 @@ func (miner *Miner) commitTransaction(env *environment, tx *types.Transaction) e
 		return err
 	}
 
+	env.txs = append(env.txs, tx)
+	env.receipts = append(env.receipts, receipt)
+	env.size += tx.Size()
+	env.tcount++
+	return nil
+}
+
+func (miner *Miner) commitBlobTransaction(env *environment, tx *types.Transaction) error {
+	sc := tx.BlobTxSidecar()
+	if sc == nil {
+		panic("blob transaction without blobs in miner")
+	}
+	// Checking against blob gas limit: It's kind of ugly to perform this check here, but there
+	// isn't really a better place right now. The blob gas limit is checked at block validation time
+	// and not during execution. This means core.ApplyTransaction will not return an error if the
+	// tx has too many blobs. So we have to explicitly check it here.
+	maxBlobs := eip4844.MaxBlobsPerBlock(miner.chainConfig, env.header.Time)
+	if env.blobs+len(sc.Blobs) > maxBlobs {
+		return errors.New("max data blobs reached")
+	}
+	receipt, err := miner.applyTransaction(env, tx)
+	if err != nil {
+		return err
+	}
+
+	txNoBlob := tx.WithoutBlobTxSidecar()
+	env.txs = append(env.txs, txNoBlob)
+	env.receipts = append(env.receipts, receipt)
+	env.sidecars = append(env.sidecars, sc)
+	env.blobs += len(sc.Blobs)
+	env.size += txNoBlob.Size()
+	*env.header.BlobGasUsed += receipt.BlobGasUsed
+	env.tcount++
+	return nil
+}
+
+// applyTransaction runs the transaction. If execution fails, state and gas pool are reverted.
+func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*types.Receipt, error) {
+	var (
+		snap = env.state.Snapshot()
+		gp   = env.gasPool.Gas()
+	)
+
+	// Berachain: PoL tx does not consume any block gas.
+	blockGasUsed := &env.header.GasUsed
+	if tx.Type() == types.PoLTxType {
+		blockGasUsed = new(uint64)
+	}
+
+	receipt, err := core.ApplyTransaction(env.evm, env.gasPool, env.state, env.header, tx, blockGasUsed)
+	if err != nil {
+		env.state.RevertToSnapshot(snap)
+		env.gasPool.SetGas(gp)
+	}
+
+	// Berachain: Prague3 post-processing.
+	if err := miner.validatePrague3Transaction(env, receipt); err != nil {
+		env.state.RevertToSnapshot(snap)
+		env.gasPool.SetGas(gp)
+	}
+
+	return receipt, err
+}
+
+// validatePrague3Transaction validates the transaction for Prague3 post-processing.
+func (miner *Miner) validatePrague3Transaction(env *environment, receipt *types.Receipt) error {
 	// Prague3 validation: Skip transaction if it contains ERC20 transfers from/to blocked addresses
 	if miner.chainConfig.IsPrague3(env.header.Number, env.header.Time) {
 		for _, log := range receipt.Logs {
@@ -345,93 +411,7 @@ func (miner *Miner) commitTransaction(env *environment, tx *types.Transaction) e
 		}
 	}
 
-	env.txs = append(env.txs, tx)
-	env.receipts = append(env.receipts, receipt)
-	env.size += tx.Size()
-	env.tcount++
 	return nil
-}
-
-func (miner *Miner) commitBlobTransaction(env *environment, tx *types.Transaction) error {
-	sc := tx.BlobTxSidecar()
-	if sc == nil {
-		panic("blob transaction without blobs in miner")
-	}
-	// Checking against blob gas limit: It's kind of ugly to perform this check here, but there
-	// isn't really a better place right now. The blob gas limit is checked at block validation time
-	// and not during execution. This means core.ApplyTransaction will not return an error if the
-	// tx has too many blobs. So we have to explicitly check it here.
-	maxBlobs := eip4844.MaxBlobsPerBlock(miner.chainConfig, env.header.Time)
-	if env.blobs+len(sc.Blobs) > maxBlobs {
-		return errors.New("max data blobs reached")
-	}
-	receipt, err := miner.applyTransaction(env, tx)
-	if err != nil {
-		return err
-	}
-
-	// Prague3 validation: Skip blob transaction if it contains ERC20 transfers from/to blocked addresses.
-	if miner.chainConfig.IsPrague3(env.header.Number, env.header.Time) {
-		for _, log := range receipt.Logs {
-			// Check if this is a Transfer event (first topic is the event signature).
-			if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
-				// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses.
-				fromAddr := common.BytesToAddress(log.Topics[1].Bytes())
-				toAddr := common.BytesToAddress(log.Topics[2].Bytes())
-
-				// Check if the transfer is from or to the BEX vault.
-				if fromAddr == miner.chainConfig.Berachain.Prague3.BexVaultAddress ||
-					toAddr == miner.chainConfig.Berachain.Prague3.BexVaultAddress {
-					return errors.New("prague3: blob transaction contains ERC20 transfer to/from BEX vault")
-				}
-
-				// Check if either from or to address is blocked.
-				for _, blockedAddr := range miner.chainConfig.Berachain.Prague3.BlockedAddresses {
-					if (fromAddr == blockedAddr && toAddr != miner.chainConfig.Berachain.Prague3.RescueAddress) ||
-						(toAddr == blockedAddr) {
-						// Revert the transaction and skip it
-						return errors.New("prague3: blob transaction contains ERC20 transfer from/to blocked address")
-					}
-				}
-			}
-
-			// Check if this is an InternalBalanceChanged event from BEX (first topic is the event signature).
-			if log.Address == miner.chainConfig.Berachain.Prague3.BexVaultAddress && len(log.Topics) > 0 && log.Topics[0] == internalBalanceChangedSig {
-				return errors.New("prague3: transaction contains InternalBalanceChanged event from BEX vault")
-			}
-		}
-	}
-
-	txNoBlob := tx.WithoutBlobTxSidecar()
-	env.txs = append(env.txs, txNoBlob)
-	env.receipts = append(env.receipts, receipt)
-	env.sidecars = append(env.sidecars, sc)
-	env.blobs += len(sc.Blobs)
-	env.size += txNoBlob.Size()
-	*env.header.BlobGasUsed += receipt.BlobGasUsed
-	env.tcount++
-	return nil
-}
-
-// applyTransaction runs the transaction. If execution fails, state and gas pool are reverted.
-func (miner *Miner) applyTransaction(env *environment, tx *types.Transaction) (*types.Receipt, error) {
-	var (
-		snap = env.state.Snapshot()
-		gp   = env.gasPool.Gas()
-	)
-
-	// Berachain: PoL tx does not consume any block gas.
-	blockGasUsed := &env.header.GasUsed
-	if tx.Type() == types.PoLTxType {
-		blockGasUsed = new(uint64)
-	}
-
-	receipt, err := core.ApplyTransaction(env.evm, env.gasPool, env.state, env.header, tx, blockGasUsed)
-	if err != nil {
-		env.state.RevertToSnapshot(snap)
-		env.gasPool.SetGas(gp)
-	}
-	return receipt, err
 }
 
 func (miner *Miner) commitTransactions(env *environment, plainTxs, blobTxs *transactionsByPriceAndNonce, interrupt *atomic.Int32) error {
