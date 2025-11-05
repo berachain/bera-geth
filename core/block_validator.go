@@ -184,36 +184,13 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 
 	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
 	if v.config.IsPrague3(block.Number(), block.Time()) {
-		for i, receipt := range res.Receipts {
-			for _, log := range receipt.Logs {
-				// Check if this is a Transfer event (first topic is the event signature).
-				if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
-					// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses.
-					fromAddr := common.BytesToAddress(log.Topics[1].Bytes())
-					toAddr := common.BytesToAddress(log.Topics[2].Bytes())
-
-					// Check if the transfer is from or to the BEX vault.
-					if fromAddr == v.config.Berachain.Prague3.BexVaultAddress ||
-						toAddr == v.config.Berachain.Prague3.BexVaultAddress {
-						return fmt.Errorf("prague3: block contains transaction %v with ERC20 transfer to/from BEX vault", block.Transactions()[i].Hash().Hex())
-					}
-
-					// Check if either from or to address is blocked.
-					for _, blockedAddr := range v.config.Berachain.Prague3.BlockedAddresses {
-						if (fromAddr == blockedAddr && toAddr != v.config.Berachain.Prague3.RescueAddress) ||
-							(toAddr == blockedAddr) {
-							return fmt.Errorf("prague3: block contains transaction %v with ERC20 transfer from/to blocked address %v", block.Transactions()[i].Hash().Hex(), blockedAddr.Hex())
-						}
-					}
-				}
-
-				// Check if this is an InternalBalanceChanged event from BEX (first topic is the event signature).
-				if log.Address == v.config.Berachain.Prague3.BexVaultAddress && len(log.Topics) > 0 && log.Topics[0] == internalBalanceChangedSig {
-					return fmt.Errorf("prague3: block contains transaction %v with InternalBalanceChanged from BEX vault", block.Transactions()[i].Hash().Hex())
-				}
+		for _, receipt := range res.Receipts {
+			if err := ValidatePrague3Transaction(&v.config.Berachain.Prague3, receipt); err != nil {
+				return err
 			}
 		}
 	}
+
 	// Validate the received block's bloom with the one derived from the generated receipts.
 	// For valid blocks this should always validate to true.
 	//
