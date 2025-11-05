@@ -52,14 +52,13 @@ type Config struct {
 
 // DefaultConfig contains default settings for miner.
 var DefaultConfig = Config{
-	GasCeil:  60_000_000,
-	GasPrice: big.NewInt(params.GWei / 1000),
+	GasCeil:  36_000_000,    // Berachain: set to 36mil to match Prague default
+	GasPrice: big.NewInt(1), // Berachain: set to 1 wei to match reth's default
 
-	// The default recommit time is chosen as two seconds since
-	// consensus-layer usually will wait a half slot of time(6s)
-	// for payload generation. It should be enough for Geth to
-	// run 3 rounds.
-	Recommit: 2 * time.Second,
+	// Berachain: The default recommit time is chosen as 1s to allow for around
+	// 1-2 rounds of payload generation. On average with 2s stable block time,
+	// there is 1.5s gap between start and stop payload generation.
+	Recommit: 1 * time.Second,
 }
 
 // Miner is the main object which takes care of submitting new work to consensus
@@ -140,6 +139,11 @@ func (miner *Miner) BuildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 
 // getPending retrieves the pending block based on the current head block.
 // The result might be nil if pending generation is failed.
+//
+// Berachain: Note that the correct PoL tx is not included in the pending block as the
+// parent proposer pubkey of the pending block is not made available here.
+//
+// TODO(BRIP-4): Include parent proposer pubkey as soon as it is made available by CL.
 func (miner *Miner) getPending() *newPayloadResult {
 	header := miner.chain.CurrentHeader()
 	miner.pendingMu.Lock()
@@ -156,14 +160,15 @@ func (miner *Miner) getPending() *newPayloadResult {
 		withdrawal = []*types.Withdrawal{}
 	}
 	ret := miner.generateWork(&generateParams{
-		timestamp:   timestamp,
-		forceTime:   false,
-		parentHash:  header.Hash(),
-		coinbase:    miner.config.PendingFeeRecipient,
-		random:      common.Hash{},
-		withdrawals: withdrawal,
-		beaconRoot:  nil,
-		noTxs:       false,
+		timestamp:      timestamp,
+		forceTime:      false,
+		parentHash:     header.Hash(),
+		coinbase:       miner.config.PendingFeeRecipient,
+		random:         common.Hash{},
+		withdrawals:    withdrawal,
+		beaconRoot:     nil,
+		proposerPubkey: &common.Pubkey{},
+		noTxs:          false,
 	}, false) // we will never make a witness for a pending block
 	if ret.err != nil {
 		return nil

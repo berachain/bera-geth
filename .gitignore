@@ -57,3 +57,9 @@ cmd/geth/geth
 cmd/rlpdump/rlpdump
 cmd/workload/workload
 cmd/keeper/keeper
+
+# claude
+.claude
+
+# for testing docker builds 
+.github/workflows/docker-test.yml
