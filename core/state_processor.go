@@ -163,6 +163,8 @@ func ApplyTransactionWithEVM(msg *Message, gp *GasPool, statedb *state.StateDB, 
 	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
 	if evm.ChainConfig().IsPrague3(blockNumber, blockTime) {
 		if err := ValidatePrague3Transaction(&evm.ChainConfig().Berachain.Prague3, receipt); err != nil {
+			// We must decrement the pointer that was increased
+			*usedGas -= result.UsedGas
 			return nil, err
 		}
 	}
