@@ -37,13 +37,14 @@ import (
 // Check engine-api specification for more details.
 // https://github.com/ethereum/execution-apis/blob/main/src/engine/cancun.md#payloadattributesv3
 type BuildPayloadArgs struct {
-	Parent       common.Hash           // The parent block to build payload on top
-	Timestamp    uint64                // The provided timestamp of generated payload
-	FeeRecipient common.Address        // The provided recipient address for collecting transaction fee
-	Random       common.Hash           // The provided randomness value
-	Withdrawals  types.Withdrawals     // The provided withdrawals
-	BeaconRoot   *common.Hash          // The provided beaconRoot (Cancun)
-	Version      engine.PayloadVersion // Versioning byte for payload id calculation.
+	Parent         common.Hash           // The parent block to build payload on top
+	Timestamp      uint64                // The provided timestamp of generated payload
+	FeeRecipient   common.Address        // The provided recipient address for collecting transaction fee
+	Random         common.Hash           // The provided randomness value
+	Withdrawals    types.Withdrawals     // The provided withdrawals
+	BeaconRoot     *common.Hash          // The provided beaconRoot (Cancun)
+	ProposerPubkey *common.Pubkey        // Berachain BRIP-0004: The provided proposer pubkey (Prague1)
+	Version        engine.PayloadVersion // Versioning byte for payload id calculation.
 }
 
 // Id computes an 8-byte identifier by hashing the components of the payload arguments.
@@ -56,6 +57,9 @@ func (args *BuildPayloadArgs) Id() engine.PayloadID {
 	rlp.Encode(hasher, args.Withdrawals)
 	if args.BeaconRoot != nil {
 		hasher.Write(args.BeaconRoot[:])
+	}
+	if args.ProposerPubkey != nil {
+		hasher.Write(args.ProposerPubkey[:])
 	}
 	var out engine.PayloadID
 	copy(out[:], hasher.Sum(nil)[:8])
@@ -98,7 +102,7 @@ func newPayload(empty *types.Block, emptyRequests [][]byte, witness *stateless.W
 }
 
 // update updates the full-block with latest built version.
-func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
+func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration, numPayloadUpdates int) {
 	payload.lock.Lock()
 	defer payload.lock.Unlock()
 
@@ -128,6 +132,7 @@ func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
 			"fees", feesInEther,
 			"root", r.block.Root(),
 			"elapsed", common.PrettyDuration(elapsed),
+			"count", numPayloadUpdates,
 		)
 	}
 	payload.cond.Broadcast() // fire signal for notifying full block
@@ -211,14 +216,15 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 	// enough to run. The empty payload can at least make sure there is something
 	// to deliver for not missing slot.
 	emptyParams := &generateParams{
-		timestamp:   args.Timestamp,
-		forceTime:   true,
-		parentHash:  args.Parent,
-		coinbase:    args.FeeRecipient,
-		random:      args.Random,
-		withdrawals: args.Withdrawals,
-		beaconRoot:  args.BeaconRoot,
-		noTxs:       true,
+		timestamp:      args.Timestamp,
+		forceTime:      true,
+		parentHash:     args.Parent,
+		coinbase:       args.FeeRecipient,
+		random:         args.Random,
+		withdrawals:    args.Withdrawals,
+		beaconRoot:     args.BeaconRoot,
+		proposerPubkey: args.ProposerPubkey,
+		noTxs:          true,
 	}
 	empty := miner.generateWork(emptyParams, witness)
 	if empty.err != nil {
@@ -235,38 +241,44 @@ func (miner *Miner) buildPayload(args *BuildPayloadArgs, witness bool) (*Payload
 		timer := time.NewTimer(0)
 		defer timer.Stop()
 
-		// Setup the timer for terminating the process if SECONDS_PER_SLOT (12s in
-		// the Mainnet configuration) have passed since the point in time identified
+		// Setup the timer for terminating the process if SECONDS_PER_SLOT (2s in
+		// the Berachain configuration) have passed since the point in time identified
 		// by the timestamp parameter.
-		endTimer := time.NewTimer(time.Second * 12)
+		//
+		// TODO(Berachain): Using 4s for now to handle cases where block time exceeds 2s. To be
+		// verified further after stable block time is in effect.
+		endTimer := time.NewTimer(time.Second * 4)
 
 		fullParams := &generateParams{
-			timestamp:   args.Timestamp,
-			forceTime:   true,
-			parentHash:  args.Parent,
-			coinbase:    args.FeeRecipient,
-			random:      args.Random,
-			withdrawals: args.Withdrawals,
-			beaconRoot:  args.BeaconRoot,
-			noTxs:       false,
+			timestamp:      args.Timestamp,
+			forceTime:      true,
+			parentHash:     args.Parent,
+			coinbase:       args.FeeRecipient,
+			random:         args.Random,
+			withdrawals:    args.Withdrawals,
+			beaconRoot:     args.BeaconRoot,
+			proposerPubkey: args.ProposerPubkey,
+			noTxs:          false,
 		}
 
+		numPayloadUpdates := 0
 		for {
 			select {
 			case <-timer.C:
 				start := time.Now()
 				r := miner.generateWork(fullParams, witness)
 				if r.err == nil {
-					payload.update(r, time.Since(start))
+					numPayloadUpdates++
+					payload.update(r, time.Since(start), numPayloadUpdates)
 				} else {
 					log.Info("Error while generating work", "id", payload.id, "err", r.err)
 				}
 				timer.Reset(miner.config.Recommit)
 			case <-payload.stop:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "delivery", "full", payload.full != nil)
 				return
 			case <-endTimer.C:
-				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout")
+				log.Info("Stopping work on payload", "id", payload.id, "reason", "timeout", "full", payload.full != nil)
 				return
 			}
 		}
