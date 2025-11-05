@@ -21,20 +21,12 @@ import (
 	"fmt"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie"
-)
-
-var (
-	// ERC20 Transfer event signature: keccak256("Transfer(address,address,uint256)")
-	transferSig = common.HexToHash("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-	// InternalBalanceChanged event signature: keccak256("InternalBalanceChanged(address,address,int256)")
-	internalBalanceChangedSig = common.HexToHash("0x18e1ea4139e68413d7d08aa752e71568e36b2c5bf940893314c2c5b01eaa0c42")
 )
 
 // BlockValidator is responsible for validating block headers, uncles and
@@ -182,7 +174,7 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 		return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), res.GasUsed)
 	}
 
-	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
+	// Berachain: If Prague3, check for ERC20 transfers involving blocked addresses.
 	if v.config.IsPrague3(block.Number(), block.Time()) {
 		for _, receipt := range res.Receipts {
 			if err := ValidatePrague3Transaction(&v.config.Berachain.Prague3, receipt); err != nil {
