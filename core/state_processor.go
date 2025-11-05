@@ -17,6 +17,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -154,21 +155,32 @@ func ApplyTransactionWithEVM(msg *Message, gp *GasPool, statedb *state.StateDB, 
 	if err != nil {
 		return nil, err
 	}
+
+	// Calculate items for receipt.
+	*usedGas += result.UsedGas
+	receipt = MakeReceipt(evm, result, statedb, blockNumber, blockHash, blockTime, tx, *usedGas, []byte{})
+
+	// Prague3 validation: Check for ERC20 transfers involving blocked addresses.
+	if evm.ChainConfig().IsPrague3(blockNumber, blockTime) {
+		if err := ValidatePrague3Transaction(&evm.ChainConfig().Berachain.Prague3, receipt); err != nil {
+			return nil, err
+		}
+	}
+
 	// Update the state with pending changes.
-	var root []byte
 	if evm.ChainConfig().IsByzantium(blockNumber) {
 		evm.StateDB.Finalise(true)
 	} else {
-		root = statedb.IntermediateRoot(evm.ChainConfig().IsEIP158(blockNumber)).Bytes()
+		// Re-update the receipt with the new intermediate root.
+		receipt.PostState = statedb.IntermediateRoot(evm.ChainConfig().IsEIP158(blockNumber)).Bytes()
 	}
-	*usedGas += result.UsedGas
 
 	// Merge the tx-local access event into the "block-local" one, in order to collect
 	// all values, so that the witness can be built.
 	if statedb.Database().TrieDB().IsVerkle() {
 		statedb.AccessEvents().Merge(evm.AccessEvents)
 	}
-	return MakeReceipt(evm, result, statedb, blockNumber, blockHash, blockTime, tx, *usedGas, root), nil
+	return receipt, nil
 }
 
 // MakeReceipt generates the receipt object for a transaction given its execution result.
@@ -214,6 +226,38 @@ func ApplyTransaction(evm *vm.EVM, gp *GasPool, statedb *state.StateDB, header *
 	}
 	// Create a new context to be used in the EVM environment
 	return ApplyTransactionWithEVM(msg, gp, statedb, header.Number, header.Hash(), header.Time, tx, usedGas, evm)
+}
+
+// ValidatePrague3Transaction validates the transaction for Prague3 post-processing. We reject ERC20
+// transfers from/to certain blocked addresses and InternalBalanceChanged events from the BEX vault.
+func ValidatePrague3Transaction(cfg *params.Prague3Config, receipt *types.Receipt) error {
+	for _, log := range receipt.Logs {
+		// Check if this is a Transfer event (first topic is the event signature)
+		if len(log.Topics) >= 3 && log.Topics[0] == transferSig {
+			// Transfer event has indexed from (topics[1]) and to (topics[2]) addresses
+			fromAddr := common.BytesToAddress(log.Topics[1].Bytes())
+			toAddr := common.BytesToAddress(log.Topics[2].Bytes())
+
+			// Check if the transfer is from or to the BEX vault.
+			if fromAddr == cfg.BexVaultAddress || toAddr == cfg.BexVaultAddress {
+				return errors.New("prague3: blob transaction contains ERC20 transfer to/from BEX vault")
+			}
+
+			// Check if either from or to address is blocked.
+			for _, blockedAddr := range cfg.BlockedAddresses {
+				if (fromAddr == blockedAddr && toAddr != cfg.RescueAddress) || (toAddr == blockedAddr) {
+					return errors.New("prague3: transaction contains ERC20 transfer from/to blocked address")
+				}
+			}
+		}
+
+		// Check if this is an InternalBalanceChanged event from BEX (first topic is the event signature).
+		if log.Address == cfg.BexVaultAddress && len(log.Topics) > 0 && log.Topics[0] == internalBalanceChangedSig {
+			return errors.New("prague3: transaction contains InternalBalanceChanged event from BEX vault")
+		}
+	}
+
+	return nil
 }
 
 // ProcessBeaconBlockRoot applies the EIP-4788 system call to the beacon block root
