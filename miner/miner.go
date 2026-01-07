@@ -48,6 +48,9 @@ type Config struct {
 	GasCeil             uint64         // Target gas ceiling for mined blocks.
 	GasPrice            *big.Int       // Minimum gas price for mining a transaction
 	Recommit            time.Duration  // The time interval for miner to re-create mining work.
+
+	// Berachain: SPECIAL CASE FOR TESTING INVALID BLOCK NUMBER
+	InvalidBlockDiff *big.Int `toml:",omitempty"` // Next block diff to add to the current block.
 }
 
 // DefaultConfig contains default settings for miner.

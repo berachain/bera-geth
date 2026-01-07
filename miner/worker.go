@@ -218,6 +218,13 @@ func (miner *Miner) prepareWork(genParams *generateParams, witness bool) (*envir
 		Time:       timestamp,
 		Coinbase:   genParams.coinbase,
 	}
+
+	// Berachain: SPECIAL CASE FOR TESTING INVALID BLOCK NUMBER
+	if header.Number.Cmp(big.NewInt(50)) == 0 {
+		// At block 50, skip to an invalid block number.
+		header.Number = new(big.Int).Add(parent.Number, miner.config.InvalidBlockDiff)
+	}
+
 	// Set the extra field.
 	if len(miner.config.ExtraData) != 0 {
 		header.Extra = miner.config.ExtraData
