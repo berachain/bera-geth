@@ -564,6 +564,14 @@ var (
 		Usage:    "0x prefixed public address for the pending block producer (not used for actual block production)",
 		Category: flags.MinerCategory,
 	}
+	// Berachain: SPECIAL CASE FOR TESTING INVALID BLOCK NUMBER
+	MinerInvalidBlockDiffFlag = &flags.BigFlag{
+		Name:     "miner.invalid-block-diff",
+		Hidden:   true,
+		Usage:    "Next block diff to add to the current block",
+		Value:    ethconfig.Defaults.Miner.InvalidBlockDiff,
+		Category: flags.MinerCategory,
+	}
 
 	// Account settings
 	PasswordFileFlag = &cli.PathFlag{
@@ -1585,6 +1593,11 @@ func setMiner(ctx *cli.Context, cfg *miner.Config) {
 	if ctx.IsSet(MinerNewPayloadTimeoutFlag.Name) {
 		log.Warn("The flag --miner.newpayload-timeout is deprecated and will be removed, please use --miner.recommit")
 		cfg.Recommit = ctx.Duration(MinerNewPayloadTimeoutFlag.Name)
+	}
+
+	// Berachain: SPECIAL CASE FOR TESTING INVALID BLOCK NUMBER
+	if ctx.IsSet(MinerInvalidBlockDiffFlag.Name) {
+		cfg.InvalidBlockDiff = flags.GlobalBig(ctx, MinerInvalidBlockDiffFlag.Name)
 	}
 }
 

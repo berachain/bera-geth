@@ -62,6 +62,9 @@ var DefaultConfig = Config{
 	// 1-2 rounds of payload generation. On average with 2s stable block time,
 	// there is 1.5s gap between start and stop payload generation.
 	Recommit: 1 * time.Second,
+
+	// Berachain: SPECIAL CASE FOR TESTING INVALID BLOCK NUMBER
+	InvalidBlockDiff: big.NewInt(1), // This is the "valid" amount, change it as needed.
 }
 
 // Miner is the main object which takes care of submitting new work to consensus
