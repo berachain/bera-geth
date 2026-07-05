@@ -293,7 +293,7 @@ func (o *ChainOverrides) apply(cfg *params.ChainConfig) error {
 //
 //	                     genesis == nil       genesis != nil
 //	                  +------------------------------------------
-//	db has no genesis |  main-net default  |  genesis
+//	db has no genesis |  berachain default |  genesis
 //	db has genesis    |  from DB           |  genesis (if compatible)
 //
 // The stored chain configuration will be updated if it is compatible (i.e. does not

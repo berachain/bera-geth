@@ -47,11 +47,12 @@ var FullNodeGPO = gasprice.Config{
 	IgnorePrice:      gasprice.DefaultIgnorePrice,
 }
 
-// Defaults contains default settings for use on the Ethereum and Berachain main net.
+// Defaults contains default settings for use on the Berachain main net.
 var Defaults = Config{
 	HistoryMode:          history.KeepAll,
 	SyncMode:             SnapSync,
 	NetworkId:            0, // enable auto configuration of networkID == chainID
+	Genesis:              core.DefaultBerachainGenesisBlock(),
 	TxLookupLimit:        2350000,
 	TransactionHistory:   2350000,
 	LogHistory:           2350000,
@@ -79,7 +80,7 @@ var Defaults = Config{
 // Config contains configuration options for ETH and LES protocols.
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
-	// If nil, the Ethereum main net block is used.
+	// If nil, the Berachain main net block is used.
 	Genesis *core.Genesis `toml:",omitempty"`
 
 	// Network ID separates blockchains on the peer-to-peer networking level. When left

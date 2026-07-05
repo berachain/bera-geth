@@ -340,16 +340,20 @@ func dumpGenesis(ctx *cli.Context) error {
 
 	db, err := stack.OpenDatabaseWithOptions("chaindata", node.DatabaseOptions{ReadOnly: true})
 	if err != nil {
-		return err
+		genesis = utils.MakeGenesis(ctx)
+	} else {
+		defer db.Close()
+		if rawdb.ReadCanonicalHash(db, 0) == (common.Hash{}) {
+			genesis = utils.MakeGenesis(ctx)
+		} else {
+			genesis, err = core.ReadGenesis(db)
+			if err != nil {
+				utils.Fatalf("failed to read genesis: %s", err)
+			}
+		}
 	}
-	defer db.Close()
 
-	genesis, err = core.ReadGenesis(db)
-	if err != nil {
-		utils.Fatalf("failed to read genesis: %s", err)
-	}
-
-	if err := json.NewEncoder(os.Stdout).Encode(*genesis); err != nil {
+	if err := json.NewEncoder(os.Stdout).Encode(genesis); err != nil {
 		utils.Fatalf("could not encode stored genesis: %s", err)
 	}
 
