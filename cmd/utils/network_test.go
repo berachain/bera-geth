@@ -110,7 +110,9 @@ func TestSetEthConfigNetworkPresets(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stack, err := node.New(&node.DefaultConfig)
+			ncfg := node.DefaultConfig
+			ncfg.DataDir = "" // keep tests hermetic; avoid touching the host filesystem
+			stack, err := node.New(&ncfg)
 			if err != nil {
 				t.Fatalf("failed to create node: %v", err)
 			}
