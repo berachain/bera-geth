@@ -311,6 +311,13 @@ func prepare(ctx *cli.Context) {
 
 	case ctx.IsSet(utils.BerachainFlag.Name):
 		log.Info("Starting bera-geth on Berachain mainnet...")
+
+	default:
+		if !ctx.IsSet(utils.DeveloperFlag.Name) &&
+			!ctx.IsSet(utils.OverrideGenesisFlag.Name) &&
+			!ctx.IsSet(utils.NetworkIdFlag.Name) {
+			log.Info("Starting bera-geth on Berachain mainnet...")
+		}
 	}
 
 	// If we're a full node on Berachain mainnet without --cache specified, bump default cache allowance

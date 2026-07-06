@@ -1029,12 +1029,13 @@ Please note that --` + MetricsHTTPFlag.Name + ` must be set to start the server.
 var (
 	// TestnetFlags is the flag group of all built-in supported testnets.
 	TestnetFlags = []cli.Flag{
+		BepoliaFlag,
 		SepoliaFlag,
 		HoleskyFlag,
 		HoodiFlag,
 	}
 	// NetworkFlags is the flag group of all built-in supported networks.
-	NetworkFlags = append([]cli.Flag{MainnetFlag}, TestnetFlags...)
+	NetworkFlags = append([]cli.Flag{BerachainFlag, MainnetFlag}, TestnetFlags...)
 
 	// DatabaseFlags is the flag group of all database flags.
 	DatabaseFlags = []cli.Flag{
@@ -1067,6 +1068,9 @@ func MakeDataDir(ctx *cli.Context) string {
 		}
 		if ctx.Bool(HoodiFlag.Name) {
 			return filepath.Join(path, "hoodi")
+		}
+		if ctx.Bool(BepoliaFlag.Name) {
+			return filepath.Join(path, "bepolia")
 		}
 		return path
 	}
@@ -1132,6 +1136,8 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 			urls = params.SepoliaBootnodes
 		case ctx.Bool(HoodiFlag.Name):
 			urls = params.HoodiBootnodes
+		case ctx.Bool(BerachainFlag.Name):
+			urls = params.BerachainBootnodes
 		case ctx.Bool(BepoliaFlag.Name):
 			urls = params.BepoliaBootnodes
 		}
@@ -1493,6 +1499,8 @@ func SetDataDir(ctx *cli.Context, cfg *node.Config) {
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "holesky")
 	case ctx.Bool(HoodiFlag.Name) && cfg.DataDir == node.DefaultDataDir():
 		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "hoodi")
+	case ctx.Bool(BepoliaFlag.Name) && cfg.DataDir == node.DefaultDataDir():
+		cfg.DataDir = filepath.Join(node.DefaultDataDir(), "bepolia")
 	}
 }
 
@@ -1823,6 +1831,14 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 		cfg.NetworkId = 560048
 		cfg.Genesis = core.DefaultHoodiGenesisBlock()
 		SetDNSDiscoveryDefaults(cfg, params.HoodiGenesisHash)
+	case ctx.Bool(BepoliaFlag.Name):
+		cfg.NetworkId = 80069
+		cfg.Genesis = core.DefaultBepoliaGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.BepoliaGenesisHash)
+	case ctx.Bool(BerachainFlag.Name):
+		cfg.NetworkId = 80094
+		cfg.Genesis = core.DefaultBerachainGenesisBlock()
+		SetDNSDiscoveryDefaults(cfg, params.BerachainGenesisHash)
 	case ctx.Bool(DeveloperFlag.Name):
 		cfg.NetworkId = 1337
 		cfg.SyncMode = ethconfig.FullSync
@@ -1918,9 +1934,10 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *ethconfig.Config) {
 		}
 		cfg.Genesis = genesis
 	default:
-		if cfg.NetworkId == 1 {
-			SetDNSDiscoveryDefaults(cfg, params.MainnetGenesisHash)
+		if cfg.Genesis == nil {
+			cfg.Genesis = core.DefaultBerachainGenesisBlock()
 		}
+		SetDNSDiscoveryDefaults(cfg, params.BerachainGenesisHash)
 	}
 	// Set any dangling config values
 	if ctx.String(CryptoKZGFlag.Name) != "gokzg" && ctx.String(CryptoKZGFlag.Name) != "ckzg" {
@@ -2249,20 +2266,25 @@ func DialRPCWithHeaders(endpoint string, headers []string) (*rpc.Client, error) 
 }
 
 func MakeGenesis(ctx *cli.Context) *core.Genesis {
-	var genesis *core.Genesis
 	switch {
 	case ctx.Bool(MainnetFlag.Name):
-		genesis = core.DefaultGenesisBlock()
+		return core.DefaultGenesisBlock()
 	case ctx.Bool(HoleskyFlag.Name):
-		genesis = core.DefaultHoleskyGenesisBlock()
+		return core.DefaultHoleskyGenesisBlock()
 	case ctx.Bool(SepoliaFlag.Name):
-		genesis = core.DefaultSepoliaGenesisBlock()
+		return core.DefaultSepoliaGenesisBlock()
 	case ctx.Bool(HoodiFlag.Name):
-		genesis = core.DefaultHoodiGenesisBlock()
+		return core.DefaultHoodiGenesisBlock()
+	case ctx.Bool(BepoliaFlag.Name):
+		return core.DefaultBepoliaGenesisBlock()
+	case ctx.Bool(BerachainFlag.Name):
+		return core.DefaultBerachainGenesisBlock()
 	case ctx.Bool(DeveloperFlag.Name):
 		Fatalf("Developer chains are ephemeral")
+		return nil
+	default:
+		return core.DefaultBerachainGenesisBlock()
 	}
-	return genesis
 }
 
 // MakeChain creates a chain manager from set command line flags.
