@@ -313,7 +313,9 @@ func prepare(ctx *cli.Context) {
 		log.Info("Starting bera-geth on Berachain mainnet...")
 
 	default:
-		if !ctx.IsSet(utils.DeveloperFlag.Name) {
+		if !ctx.IsSet(utils.DeveloperFlag.Name) &&
+			!ctx.IsSet(utils.OverrideGenesisFlag.Name) &&
+			!ctx.IsSet(utils.NetworkIdFlag.Name) {
 			log.Info("Starting bera-geth on Berachain mainnet...")
 		}
 	}
