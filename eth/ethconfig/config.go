@@ -52,7 +52,6 @@ var Defaults = Config{
 	HistoryMode:          history.KeepAll,
 	SyncMode:             SnapSync,
 	NetworkId:            0, // enable auto configuration of networkID == chainID
-	Genesis:              core.DefaultBerachainGenesisBlock(),
 	TxLookupLimit:        2350000,
 	TransactionHistory:   2350000,
 	LogHistory:           2350000,

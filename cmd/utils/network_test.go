@@ -163,10 +163,9 @@ func TestIsNetworkPresetBerachainBepolia(t *testing.T) {
 func TestDefaultsBerachainGenesis(t *testing.T) {
 	t.Parallel()
 
-	if ethconfig.Defaults.Genesis == nil || ethconfig.Defaults.Genesis.Config == nil {
-		t.Fatal("expected default genesis config")
-	}
-	if got := ethconfig.Defaults.Genesis.Config.ChainID.Uint64(); got != 80094 {
-		t.Fatalf("default genesis chain id mismatch: got %d, want 80094", got)
+	// Genesis is resolved lazily in SetEthConfig to avoid decoding the large
+	// Berachain prealloc at ethconfig package init time.
+	if ethconfig.Defaults.Genesis != nil {
+		t.Fatal("expected nil genesis in Defaults; use SetEthConfig to resolve")
 	}
 }
