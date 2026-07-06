@@ -338,11 +338,15 @@ func dumpGenesis(ctx *cli.Context) error {
 	// dump whatever already exists in the datadir
 	stack, _ := makeConfigNode(ctx)
 
-	db, err := stack.OpenDatabaseWithOptions("chaindata", node.DatabaseOptions{ReadOnly: true})
-	if err != nil {
+	if rawdb.PreexistingDatabase(stack.ResolvePath("chaindata")) == "" {
 		genesis = utils.MakeGenesis(ctx)
 	} else {
+		db, err := stack.OpenDatabaseWithOptions("chaindata", node.DatabaseOptions{ReadOnly: true})
+		if err != nil {
+			return err
+		}
 		defer db.Close()
+
 		if rawdb.ReadCanonicalHash(db, 0) == (common.Hash{}) {
 			genesis = utils.MakeGenesis(ctx)
 		} else {
